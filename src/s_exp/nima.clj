@@ -40,18 +40,18 @@
     (.status (Http$Status/create (:status ring-response 200)))
     (.send (:body ring-response))))
 
-(defn server-request->ring-request [^ServerRequest request]
-  (let [headers (server-request->ring-headers request)
-        prologue (.prologue request)
-        remote-peer (.remotePeer request)
-        local-peer (.localPeer request)
-        content (.content request)]
+(defn server-request->ring-request [^ServerRequest server-request]
+  (let [headers (server-request->ring-headers server-request)
+        prologue (.prologue server-request)
+        remote-peer (.remotePeer server-request)
+        local-peer (.localPeer server-request)
+        content (.content server-request)]
     {:body (when-not (.consumed content) (.inputStream content))
      :server-port (.port local-peer)
      :server-name (.host local-peer)
      :remote-addr (.address remote-peer)
-     :uri (.rawPath (.path request))
-     :query-string (.query request)
+     :uri (.rawPath (.path server-request))
+     :query-string (.query server-request)
      :scheme (.protocol prologue)
      :protocol (.protocolVersion prologue)
      ;; :ssl-client-cert (some-> request .remotePeer .tlsCertificates)
