@@ -13,7 +13,7 @@
 
 (def default-server-options {:port 8080})
 
-(defn set-response-headers! [^ServerResponse server-response headers]
+(defn set-server-response-headers! [^ServerResponse server-response headers]
   (run! (fn [[k v]]
           (.header server-response
                    (name k)
@@ -24,24 +24,24 @@
                                  [(str v)]))))
         headers))
 
-(defn http-request-headers->ring-headers
-  [^ServerRequest http-request]
+(defn server-request->ring-headers
+  [^ServerRequest server-request]
   (-> (reduce (fn [m ^Http$HeaderValue h]
                 (assoc! m
                         (keyword (str/lower-case (.name h)))
                         (.values h)))
               (transient {})
-              (some-> http-request .headers))
+              (some-> server-request .headers))
       persistent!))
 
-(defn http-response! [^ServerResponse http-response ring-response]
-  (set-response-headers! http-response (:headers ring-response))
-  (doto http-response
+(defn send-response! [^ServerResponse server-response ring-response]
+  (set-server-response-headers! server-response (:headers ring-response))
+  (doto server-response
     (.status (Http$Status/create (:status ring-response 200)))
     (.send (:body ring-response))))
 
-(defn http-request->ring-request [^ServerRequest request]
-  (let [headers (http-request-headers->ring-headers request)
+(defn server-request->ring-request [^ServerRequest request]
+  (let [headers (server-request->ring-headers request)
         prologue (.prologue request)
         remote-peer (.remotePeer request)
         local-peer (.localPeer request)
@@ -80,10 +80,10 @@
        (accept [_ route]
          (.any ^HttpRouting$Builder route
                (reify Handler
-                 (handle [_ http-request http-response]
-                   (let [ring-request (http-request->ring-request http-request)
+                 (handle [_ server-request server-response]
+                   (let [ring-request (server-request->ring-request server-request)
                          ring-response (handler ring-request)]
-                     (http-response! http-response ring-response))))))))))
+                     (send-response! server-response ring-response))))))))))
 
 (defn make-server [opts handler]
   (let [opts (merge default-server-options opts)]
