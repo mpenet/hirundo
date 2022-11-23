@@ -1,0 +1,13 @@
+{:paths ["src" "resources"]
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        io.helidon.nima/helidon-nima {:mvn/version "4.0.0-ALPHA2"}
+        io.helidon.nima.webserver/helidon-nima-webserver {:mvn/version "4.0.0-ALPHA2"}
+        io.helidon.nima.http2/helidon-nima-http2-webserver {:mvn/version "4.0.0-ALPHA2"}}
+
+ :aliases
+ {:test {:jvm-opts ["--enable-preview"]
+         :extra-paths ["test"]
+         :extra-deps {org.clojure/test.check {:mvn/version "1.1.1"}
+                      com.exoscale/eftest {:mvn/version "1.0.0"}}
+         :exec-fn public-api.smoke/-main
+         :main-opts ["-m" "blabla"]}}}
