@@ -18,6 +18,7 @@
           (.header server-response
                    (name k)
                    ^"[Ljava.lang.String;"
+                   ;; slow, into-array calls into `seq`
                    (into-array String
                                (if (coll? v)
                                  (map str v)
@@ -40,6 +41,23 @@
     (.status (Http$Status/create (:status ring-response 200)))
     (.send (:body ring-response))))
 
+(defn server-request->ring-method [^ServerRequest server-request]
+
+  (let [method (-> server-request
+                   .prologue
+                   .method
+                   .name)]
+    (case method
+      "GET" :get
+      "POST" :post
+      "PUT" :put
+      "DELETE" :delete
+      "HEAD" :head
+      "OPTIONS" :options
+      "TRACE" :trace
+      "PATCH" :patch
+      (keyword (str/lower-case method)))))
+
 (defn server-request->ring-request [^ServerRequest server-request]
   (let [headers (server-request->ring-headers server-request)
         prologue (.prologue server-request)
@@ -52,28 +70,16 @@
      :remote-addr (.address remote-peer)
      :uri (.rawPath (.path server-request))
      :query-string (.query server-request)
-     :scheme (.protocol prologue)
-     :protocol (.protocolVersion prologue)
+     :scheme (case (.protocol prologue)
+               "HTTP" :http
+               "HTTPS" :https)
+     :protocol (str (.protocol prologue) "/" (.protocolVersion prologue))
      ;; :ssl-client-cert (some-> request .remotePeer .tlsCertificates)
-     :request-method (keyword (str/lower-case (.name (.method prologue))))
+     :request-method (server-request->ring-method server-request)
      :headers headers}))
 
-(defmulti set-server-option! (fn [_builder k _v] k))
-
-(defmethod set-server-option! :default [builder _ _]
-  builder)
-
-(defmethod set-server-option! :port
-  [^WebServer$Builder builder _ port]
-  (.port builder (int port)))
-
-(defn server-builder [options]
-  (reduce (fn [builder [k v]]
-            (set-server-option! builder k v))
-          (WebServer/builder)
-          options))
-
-(defn set-handler! ^WebServer$Builder [^WebServer$Builder builder opts handler]
+(defn set-ring1-handler! ^WebServer$Builder
+  [^WebServer$Builder builder handler opts]
   (doto builder
     (.routing
      (reify java.util.function.Consumer
@@ -85,20 +91,37 @@
                          ring-response (handler ring-request)]
                      (send-response! server-response ring-response))))))))))
 
-(defn make-server [opts handler]
+(defmulti set-server-option! (fn [_builder k _v _opts] k))
+
+(defmethod set-server-option! :default [builder _ _ _]
+  builder)
+
+(defmethod set-server-option! :port
+  [^WebServer$Builder builder _ port _]
+  (.port builder (int port)))
+
+(defmethod set-server-option! :handler
+  [^WebServer$Builder builder _ handler opts]
+  (set-ring1-handler! builder handler opts))
+
+(defn server-builder [options]
+  (reduce (fn [builder [k v]]
+            (set-server-option! builder k v options))
+          (WebServer/builder)
+          options))
+
+(defn make-server [opts]
   (let [opts (merge default-server-options opts)]
     (-> (server-builder opts)
-        (set-handler! opts handler)
         (.start))))
 
 (defn stop! [^WebServer server]
   (.stop server))
 
-(def s (make-server {}
-                    (fn [req]
-                      (prn :req req)
-                      {:status 200 :body (str (System/currentTimeMillis)) :headers {"stuff" "lolo"}})))
+(comment
+  (def s (make-server
+          {:handler
+           (fn [req]
+             {:status 200 :body (str (System/currentTimeMillis)) :headers {"stuff" "lolo"}})}))
 
-;; (stop! s)
-
-
+  (stop! s))
