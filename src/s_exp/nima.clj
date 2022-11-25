@@ -12,6 +12,8 @@
                                            ServerRequest
                                            ServerResponse)))
 
+;; TODO http2 ? client ? 
+
 (set! *warn-on-reflection* true)
 
 (def default-server-options
@@ -39,6 +41,8 @@
                        (header-val-array v))))
         headers))
 
+;; Try to decode headers against a static table first, and fallback to
+;; `str/lower-case` if there are no matches
 (declare header-key->ring-header-key)
 (eval
  `(defn ~'header-key->ring-header-key
@@ -65,6 +69,8 @@
   (set-server-response-headers! server-response (:headers ring-response))
   (doto server-response
     (.status (Http$Status/create (:status ring-response 200)))
+    ;; TODO we likely should have a proto that dicts body ->
+    ;; ready-to-send-payload, handle streamable, entities, nil etc
     (.send (:body ring-response))))
 
 (defn server-request->ring-method [^ServerRequest server-request]
@@ -72,6 +78,8 @@
                    .prologue
                    .method
                    .name)]
+    ;; mess with the string as a last resort, try to match against static values
+    ;; first
     (case method
       "GET" :get
       "POST" :post
@@ -104,6 +112,7 @@
                "HTTP" :http
                "HTTPS" :https)
      :protocol (server-request->ring-protocol server-request)
+     ;; TODO add missing ssl keys
      ;; :ssl-client-cert (some-> request .remotePeer .tlsCertificates)
      :request-method (server-request->ring-method server-request)
      :headers headers
@@ -160,12 +169,18 @@
           (WebServer/builder)
           options))
 
-(defn start! [opts]
+(defn start!
+  "Starts a new server.
+  See `default-server-options` to see supported options.  Requires at the very
+  least a :handler key, to be used as ring handler"
+  [opts]
   (let [opts (merge-with merge default-server-options opts)]
     (-> (server-builder opts)
         (.start))))
 
-(defn stop! [^WebServer server]
+(defn stop!
+  "Stops server, noop if already stopped"
+  [^WebServer server]
   (.stop server))
 
 ;; (def r {:status 200 :body "" :headers {:foo [1 2] :bar "bay"}})
