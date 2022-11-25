@@ -58,7 +58,8 @@
       "PATCH" :patch
       (keyword (str/lower-case method)))))
 
-(defn server-request->ring-request [^ServerRequest server-request]
+(defn server-request->ring-request [^ServerRequest server-request
+                                    ^ServerResponse server-response]
   (let [headers (server-request->ring-headers server-request)
         prologue (.prologue server-request)
         remote-peer (.remotePeer server-request)
@@ -76,7 +77,9 @@
      :protocol (str (.protocol prologue) "/" (.protocolVersion prologue))
      ;; :ssl-client-cert (some-> request .remotePeer .tlsCertificates)
      :request-method (server-request->ring-method server-request)
-     :headers headers}))
+     :headers headers
+     ::server-request server-request
+     ::server-response server-response}))
 
 (defn set-ring1-handler! ^WebServer$Builder
   [^WebServer$Builder builder handler _opts]

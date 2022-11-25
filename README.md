@@ -1,6 +1,6 @@
-# s-exp/nima
+# com.s-exp/nima
 
-Playground for loom based helidon/nima ring adapter 
+Helidon/Nima ring adapter, loom based 
 
 ## Installation
 
