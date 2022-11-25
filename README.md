@@ -11,11 +11,11 @@ Nima is alpha2 status right now, so do not use this in prod please.
 
 (def server
   (nima/start! {:port 8080
-               :handler
-               (fn [{:as request :keys [body headers ...]}]
-                 {:status 200
-                  :body "Hello world"
-                  :headers {"Something" "Interesting"}})}))
+                :handler
+                (fn [{:as request :keys [body headers ...]}]
+                  {:status 200
+                   :body "Hello world"
+                   :headers {"Something" "Interesting"}})}))
 ;; ...
 
 (nima/stop! server)
