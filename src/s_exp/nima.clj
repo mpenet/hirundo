@@ -20,14 +20,23 @@
                     :backlog 1024
                     :max-payload-size -1}})
 
-(defn set-server-response-headers! [^ServerResponse server-response headers]
+(defn- header-val-array ^"[Ljava.lang.String;" [x]
+  (if (coll? x)
+    (if (counted? x)
+      (let [len (count x)
+            a ^"[Ljava.lang.String;" (make-array String len)]
+        (dotimes [i len] (aset a i (str (nth x i))))
+        a)
+      (into-array String (map str x)))
+    (doto ^"[Ljava.lang.String;" (make-array String 1)
+      (aset 0 (str x)))))
+
+(defn set-server-response-headers!
+  [^ServerResponse server-response headers]
   (run! (fn [[k v]]
-          (.header server-response
-                   (name k)
-                   (if (coll? v)
-                     ^"[Ljava.lang.String;" (into-array String (eduction (map str) v))
-                     (doto ^"[Ljava.lang.String;" (make-array String 1)
-                       (aset 0 (cond-> v (not (string? v)) str))))))
+          (-> server-response
+              (.header (name k)
+                       (header-val-array v))))
         headers))
 
 (declare header-key->ring-header-key)
@@ -159,13 +168,13 @@
 (defn stop! [^WebServer server]
   (.stop server))
 
-(comment
-  (def r {:status 200 :body "" :headers {:foo [1 2] :bar "bay"}})
-  (def s (start!
-          {:default-socket
-           {:write-queue-length 100
-            :backlog 3000}
-           :handler (fn [req] r)}))
+;; (def r {:status 200 :body "" :headers {:foo [1 2] :bar "bay"}})
+;; (def s (start!
+;;         {:default-socket
+;;          {:write-queue-length 100
+;;           :backlog 3000}
+;;          :handler (fn [req] r)}))
 
-  (stop! s))
+;; (stop! s)
+
 
