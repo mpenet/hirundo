@@ -2,7 +2,7 @@
 
 Helidon/Nima [RING](https://github.com/ring-clojure/ring/blob/master/SPEC) adapter for clojure, loom based 
 
-It's early days to expect breakage. But it mostly works already, just remember
+It's early days so expect breakage. But it mostly works already, just remember
 Nima is alpha2 status right now, so do not use this in prod please.
 
 
