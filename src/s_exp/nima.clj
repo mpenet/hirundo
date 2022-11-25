@@ -79,7 +79,7 @@
      :headers headers}))
 
 (defn set-ring1-handler! ^WebServer$Builder
-  [^WebServer$Builder builder handler opts]
+  [^WebServer$Builder builder handler _opts]
   (doto builder
     (.routing
      (reify java.util.function.Consumer
@@ -87,7 +87,9 @@
          (.any ^HttpRouting$Builder route
                (reify Handler
                  (handle [_ server-request server-response]
-                   (let [ring-request (server-request->ring-request server-request)
+                   (let [ring-request (server-request->ring-request
+                                       server-request
+                                       server-response)
                          ring-response (handler ring-request)]
                      (send-response! server-response ring-response))))))))))
 
