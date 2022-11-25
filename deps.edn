@@ -9,5 +9,6 @@
          :extra-paths ["test"]
          :extra-deps {org.clojure/test.check {:mvn/version "1.1.1"}
                       com.exoscale/eftest {:mvn/version "1.0.0"}}
-         :exec-fn nima.test-runner/-main
-         :main-opts ["-m" "blabla"]}}}
+         ;; :exec-fn nima.test-runner/-main
+         ;; :main-opts ["-m" "blabla"]
+         }}}

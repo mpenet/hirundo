@@ -1,35 +1,52 @@
 (ns s-exp.nima
-  (:require [clojure.string :as str])
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str])
   (:import (io.helidon.common.http Http$HeaderValue
                                    Http$Status)
-           (io.helidon.nima.webserver WebServer WebServer$Builder)
-           (io.helidon.nima.webserver.http HttpRouting$Builder
+           (io.helidon.nima.webserver ListenerConfiguration$Builder
+                                      WebServer
+                                      WebServer$Builder)
+           (io.helidon.nima.webserver.http Handler
                                            Handler
-                                           Handler
-                                           ServerResponse
-                                           ServerRequest)))
+                                           HttpRouting$Builder
+                                           ServerRequest
+                                           ServerResponse)))
 
 (set! *warn-on-reflection* true)
 
-(def default-server-options {:port 8080})
+(def default-server-options
+  {:port 8080
+   :default-socket {:write-queue-length 1
+                    :backlog 1024
+                    :max-payload-size -1}})
 
 (defn set-server-response-headers! [^ServerResponse server-response headers]
   (run! (fn [[k v]]
           (.header server-response
                    (name k)
-                   ^"[Ljava.lang.String;"
-                   ;; slow, into-array calls into `seq`
-                   (into-array String
-                               (if (coll? v)
-                                 (map str v)
-                                 [(str v)]))))
+                   (if (coll? v)
+                     ^"[Ljava.lang.String;" (into-array String (eduction (map str) v))
+                     (doto ^"[Ljava.lang.String;" (make-array String 1)
+                       (aset 0 (cond-> v (not (string? v)) str))))))
         headers))
+
+(declare header-key->ring-header-key)
+(eval
+ `(defn ~'header-key->ring-header-key
+    [k#]
+    (case k#
+      ~@(mapcat (juxt identity str/lower-case)
+                (->> "headers.txt"
+                     io/resource
+                     io/reader
+                     line-seq))
+      (str/lower-case k#))))
 
 (defn server-request->ring-headers
   [^ServerRequest server-request]
   (-> (reduce (fn [m ^Http$HeaderValue h]
                 (assoc! m
-                        (keyword (str/lower-case (.name h)))
+                        (header-key->ring-header-key (.name h))
                         (.values h)))
               (transient {})
               (some-> server-request .headers))
@@ -42,7 +59,6 @@
     (.send (:body ring-response))))
 
 (defn server-request->ring-method [^ServerRequest server-request]
-
   (let [method (-> server-request
                    .prologue
                    .method
@@ -57,6 +73,10 @@
       "TRACE" :trace
       "PATCH" :patch
       (keyword (str/lower-case method)))))
+
+(defn server-request->ring-protocol [^ServerRequest server-request]
+  (let [prologue (.prologue server-request)]
+    (str (.protocol prologue) "/" (.protocolVersion prologue))))
 
 (defn server-request->ring-request [^ServerRequest server-request
                                     ^ServerResponse server-response]
@@ -74,7 +94,7 @@
      :scheme (case (.protocol prologue)
                "HTTP" :http
                "HTTPS" :https)
-     :protocol (str (.protocol prologue) "/" (.protocolVersion prologue))
+     :protocol (server-request->ring-protocol server-request)
      ;; :ssl-client-cert (some-> request .remotePeer .tlsCertificates)
      :request-method (server-request->ring-method server-request)
      :headers headers
@@ -105,18 +125,34 @@
   [^WebServer$Builder builder _ port _]
   (.port builder (int port)))
 
+(defmethod set-server-option! :default-socket
+  [^WebServer$Builder builder _
+   {:as cfg :keys [write-queue-length backlog max-payload-size receive-buffer-size]} _]
+  (doto builder
+    (.defaultSocket
+     (reify java.util.function.Consumer
+       (accept [_ listener-configuration-builder]
+         (let [listener (doto ^ListenerConfiguration$Builder listener-configuration-builder
+                          (.writeQueueLength (int write-queue-length))
+                          (.backlog (int backlog))
+                          (.maxPayloadSize (long max-payload-size)))]
+           (when receive-buffer-size
+             (.receiveBufferSize listener receive-buffer-size))))))))
+
 (defmethod set-server-option! :handler
   [^WebServer$Builder builder _ handler opts]
   (set-ring1-handler! builder handler opts))
 
-(defn server-builder [options]
+(defn server-builder
+  ^WebServer$Builder
+  [options]
   (reduce (fn [builder [k v]]
             (set-server-option! builder k v options))
           (WebServer/builder)
           options))
 
-(defn make-server [opts]
-  (let [opts (merge default-server-options opts)]
+(defn start! [opts]
+  (let [opts (merge-with merge default-server-options opts)]
     (-> (server-builder opts)
         (.start))))
 
@@ -124,9 +160,12 @@
   (.stop server))
 
 (comment
-  (def s (make-server
-          {:handler
-           (fn [req]
-             {:status 200 :body (str (System/currentTimeMillis)) :headers {"stuff" "lolo"}})}))
+  (def r {:status 200 :body "" :headers {:foo [1 2] :bar "bay"}})
+  (def s (start!
+          {:default-socket
+           {:write-queue-length 100
+            :backlog 3000}
+           :handler (fn [req] r)}))
 
   (stop! s))
+
