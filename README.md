@@ -28,6 +28,8 @@ Nima is alpha2 status right now, so do not use this in prod please.
 {:deps {com.s-exp/nima {:git/sha "..." :git/url "https://github.com/mpenet/nima"}}}
 ```
 
+Note: You need to use java19 and add `:jvm-opts ["--enable-preview"]` to the alias you will use to be able to run it.
+
 ## License
 
 Copyright © 2022 Max Penet
