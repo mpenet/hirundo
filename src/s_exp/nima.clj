@@ -16,10 +16,7 @@
 (set! *warn-on-reflection* true)
 
 (def default-server-options
-  {:port 8080
-   :default-socket {:write-queue-length 1
-                    :backlog 1024
-                    :max-payload-size -1}})
+  {:port 8080})
 
 (defprotocol BodyWriter
   (write-body! [x server-response]))
@@ -174,7 +171,10 @@
 
 (defmethod set-server-option! :default-socket
   [^WebServer$Builder builder _
-   {:as cfg :keys [write-queue-length backlog max-payload-size receive-buffer-size]} _]
+   {:keys [write-queue-length backlog max-payload-size receive-buffer-size]
+    :or {write-queue-length 1
+         backlog 1024
+         max-payload-size -1}} _]
   (doto builder
     (.defaultSocket
      (reify java.util.function.Consumer
@@ -203,7 +203,7 @@
   See `default-server-options` to see supported options.  Requires at the very
   least a :handler key, to be used as ring handler"
   [opts]
-  (let [opts (merge-with merge default-server-options opts)]
+  (let [opts (merge default-server-options opts)]
     (-> (server-builder opts)
         (.start))))
 
@@ -212,18 +212,18 @@
   [^WebServer server]
   (.stop server))
 
-(comment
-  ;; (def r {:status 200 :body (java.io.ByteArrayInputStream. (.getBytes "bar")) :headers {:foo [1 2] :bar ["bay"]}})
- ;; (def r {:status 200 :body ["foo\n" "bar"] :headers {:foo [1 2] :bar ["bay"]}})
-  (def r {:status 200 :body (io/file "deps.edn") :headers {:foo [1 2] :bar ["bay"]}})
-  (def s (start!
-          {:default-socket
-           {:write-queue-length 100
-            :backlog 3000}
-           :handler (fn [req]
-                      (prn req)
-                      r)}))
-  (stop! s))
+;; ;; (def r {:status 200 :body (java.io.ByteArrayInputStream. (.getBytes "bar")) :headers {:foo [1 2] :bar ["bay"]}})
+;; ;; (def r {:status 200 :body ["foo\n" "bar"] :headers {:foo [1 2] :bar ["bay"]}})
+;; (def r {:status 200 :body nil})
+;; (def s (start!
+;;         {;; :default-socket
+;;          ;; {:write-queue-length 100
+;;          ;;  :backlog 3000}
+;;          :port 8081
+;;          :handler (fn [req]
+;;                     r)}))
+;; (stop! s)
 
+;; https://api.github.com/repos/mpenet/nima/commits/main?per_page=1
 
 
