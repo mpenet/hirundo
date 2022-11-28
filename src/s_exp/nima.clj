@@ -13,8 +13,6 @@
            (java.io FileInputStream InputStream OutputStream)
            (javax.net.ssl SSLContext)))
 
-;; TODO http2 ? 
-
 (set! *warn-on-reflection* true)
 
 (def default-server-options
