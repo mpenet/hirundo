@@ -212,16 +212,18 @@
   [^WebServer server]
   (.stop server))
 
-;; (def r {:status 200 :body (java.io.ByteArrayInputStream. (.getBytes "bar")) :headers {:foo [1 2] :bar ["bay"]}})
-;; (def r {:status 200 :body ["foo\n" "bar"] :headers {:foo [1 2] :bar ["bay"]}})
-(def r {:status 200 :body (io/file "deps.edn") :headers {:foo [1 2] :bar ["bay"]}})
-(def s (start!
-        {:default-socket
-         {:write-queue-length 100
-          :backlog 3000}
-         :handler (fn [req]
-                    (prn req)
-                    r)}))
+(comment
+  ;; (def r {:status 200 :body (java.io.ByteArrayInputStream. (.getBytes "bar")) :headers {:foo [1 2] :bar ["bay"]}})
+ ;; (def r {:status 200 :body ["foo\n" "bar"] :headers {:foo [1 2] :bar ["bay"]}})
+  (def r {:status 200 :body (io/file "deps.edn") :headers {:foo [1 2] :bar ["bay"]}})
+  (def s (start!
+          {:default-socket
+           {:write-queue-length 100
+            :backlog 3000}
+           :handler (fn [req]
+                      (prn req)
+                      r)}))
+  (stop! s))
 
-;; (stop! s)
+
 
