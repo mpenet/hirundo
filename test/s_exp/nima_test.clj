@@ -1,7 +1,11 @@
 (ns s-exp.nima-test
   (:require [clojure.test :refer :all]
-            [s-exp.nima :refer :all]))
+            [s-exp.nima :as nima]))
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 1 1))))
+(defmacro with-server [opts & body]
+
+  `(let [server# (nima/start! ~opts)]
+     (try
+       ~@body
+       (finally (nima/stop! server#)))))
+

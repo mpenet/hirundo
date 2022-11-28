@@ -1,18 +1,17 @@
 (ns s-exp.nima
   (:require [clojure.java.io :as io]
             [clojure.string :as str])
-  (:import (io.helidon.common.http Http$HeaderValue
-                                   Http$Status)
-           (io.helidon.nima.webserver ListenerConfiguration$Builder
-                                      WebServer
-                                      WebServer$Builder)
-           (io.helidon.nima.webserver.http Handler
-                                           Handler
-                                           HttpRouting$Builder
-                                           ServerRequest
-                                           ServerResponse)))
+  (:import (io.helidon.common.http Http$HeaderValue Http$Status)
+           (io.helidon.nima.webserver ListenerConfiguration$Builder WebServer WebServer$Builder)
+           (io.helidon.nima.webserver.http
+            Handler
+            Handler
+            HttpRouting$Builder
+            ServerRequest
+            ServerResponse)
+           (java.io FileInputStream InputStream OutputStream)))
 
-;; TODO http2 ? client ? 
+;; TODO http2 ? 
 
 (set! *warn-on-reflection* true)
 
@@ -21,6 +20,37 @@
    :default-socket {:write-queue-length 1
                     :backlog 1024
                     :max-payload-size -1}})
+
+(defprotocol BodyWriter
+  (write-body! [x server-response]))
+
+(extend-protocol BodyWriter
+
+  clojure.lang.Sequential
+  (write-body! [xs ^ServerResponse server-response]
+    (with-open [os ^OutputStream (.outputStream server-response)]
+      (run! (fn [^String chunk] (.write os (.getBytes chunk)))
+            xs)))
+
+  java.io.InputStream
+  (write-body! [is ^ServerResponse server-response]
+    (with-open [^InputStream is is
+                os ^OutputStream (.outputStream server-response)]
+      (.transferTo is os)))
+
+  java.io.File
+  (write-body! [file ^ServerResponse server-response]
+    (with-open [os ^OutputStream (.outputStream server-response)
+                is (FileInputStream. file)]
+      (.transferTo is os)))
+
+  nil
+  (write-body! [_ server-response]
+    (.send ^ServerResponse server-response))
+
+  Object
+  (write-body! [o server-response]
+    (.send ^ServerResponse server-response o)))
 
 (defn- header-val-array ^"[Ljava.lang.String;" [x]
   (if (coll? x)
@@ -43,17 +73,15 @@
 
 ;; Try to decode headers against a static table first, and fallback to
 ;; `str/lower-case` if there are no matches
-(declare header-key->ring-header-key)
-(eval
- `(defn ~'header-key->ring-header-key
-    [k#]
-    (case k#
-      ~@(mapcat (juxt identity str/lower-case)
-                (->> "headers.txt"
-                     io/resource
-                     io/reader
-                     line-seq))
-      (str/lower-case k#))))
+(def header-key->ring-header-key
+  (eval `(fn [k#]
+           (case k#
+             ~@(mapcat (juxt identity str/lower-case)
+                       (->> "headers.txt"
+                            io/resource
+                            io/reader
+                            line-seq))
+             (str/lower-case k#)))))
 
 (defn server-request->ring-headers
   [^ServerRequest server-request]
@@ -65,13 +93,14 @@
               (some-> server-request .headers))
       persistent!))
 
-(defn send-response! [^ServerResponse server-response ring-response]
-  (set-server-response-headers! server-response (:headers ring-response))
-  (doto server-response
-    (.status (Http$Status/create (:status ring-response 200)))
-    ;; TODO we likely should have a proto that dicts body ->
-    ;; ready-to-send-payload, handle streamable, entities, nil etc
-    (.send (:body ring-response))))
+(defn send-response!
+  [^ServerResponse server-response {:as _ring-response
+                                    :keys [body headers status]
+                                    :or {status 200}}]
+  (set-server-response-headers! server-response headers)
+  (.status server-response (Http$Status/create status))
+  (write-body! body server-response)
+  server-response)
 
 (defn server-request->ring-method [^ServerRequest server-request]
   (let [method (-> server-request
@@ -183,13 +212,16 @@
   [^WebServer server]
   (.stop server))
 
-;; (def r {:status 200 :body "" :headers {:foo [1 2] :bar "bay"}})
-;; (def s (start!
-;;         {:default-socket
-;;          {:write-queue-length 100
-;;           :backlog 3000}
-;;          :handler (fn [req] r)}))
+;; (def r {:status 200 :body (java.io.ByteArrayInputStream. (.getBytes "bar")) :headers {:foo [1 2] :bar ["bay"]}})
+;; (def r {:status 200 :body ["foo\n" "bar"] :headers {:foo [1 2] :bar ["bay"]}})
+(def r {:status 200 :body (io/file "deps.edn") :headers {:foo [1 2] :bar ["bay"]}})
+(def s (start!
+        {:default-socket
+         {:write-queue-length 100
+          :backlog 3000}
+         :handler (fn [req]
+                    (prn req)
+                    r)}))
 
 ;; (stop! s)
-
 
