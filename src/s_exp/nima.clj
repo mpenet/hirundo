@@ -54,11 +54,11 @@
     (if (counted? x)
       (let [len (count x)
             a ^"[Ljava.lang.String;" (make-array String len)]
-        (dotimes [i len] (aset a i (str (nth x i))))
+        (dotimes [i len] (aset a i (nth x i)))
         a)
-      (into-array String (map str x)))
+      (into-array String x))
     (doto ^"[Ljava.lang.String;" (make-array String 1)
-      (aset 0 (str x)))))
+      (aset 0 x))))
 
 (defn set-server-response-headers!
   [^ServerResponse server-response headers]
@@ -92,10 +92,9 @@
 
 (defn send-response!
   [^ServerResponse server-response {:as _ring-response
-                                    :keys [body headers status]
-                                    :or {status 200}}]
+                                    :keys [body headers status]}]
   (set-server-response-headers! server-response headers)
-  (.status server-response (Http$Status/create status))
+  (.status server-response (Http$Status/create (or status 200)))
   (write-body! body server-response)
   server-response)
 
@@ -133,7 +132,8 @@
      :server-name (.host local-peer)
      :remote-addr (.address remote-peer)
      :uri (.rawPath (.path server-request))
-     :query-string (.query server-request)
+     :query-string (let [query (.rawValue (.query server-request))]
+                     (when (not= "" query) query))
      :scheme (case (.protocol prologue)
                "HTTP" :http
                "HTTPS" :https)
