@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str])
   (:import (io.helidon.common.http Http$HeaderValue Http$Status)
+           (io.helidon.nima.common.tls Tls)
            (io.helidon.nima.webserver ListenerConfiguration$Builder WebServer WebServer$Builder)
            (io.helidon.nima.webserver.http
             Handler
@@ -9,7 +10,8 @@
             HttpRouting$Builder
             ServerRequest
             ServerResponse)
-           (java.io FileInputStream InputStream OutputStream)))
+           (java.io FileInputStream InputStream OutputStream)
+           (javax.net.ssl SSLContext)))
 
 ;; TODO http2 ? 
 
@@ -185,6 +187,18 @@
                           (.maxPayloadSize (long max-payload-size)))]
            (when receive-buffer-size
              (.receiveBufferSize listener receive-buffer-size))))))))
+
+(defmethod set-server-option! :ssl-context
+  [^WebServer$Builder builder _ ^SSLContext ssl-context opts]
+  (doto builder
+    (.tls (-> (Tls/builder)
+              (.sslContext ssl-context)
+              (.build)))))
+
+(defmethod set-server-option! :tls
+  [^WebServer$Builder builder _ tls opts]
+  (doto builder
+    (.tls tls)))
 
 (defmethod set-server-option! :handler
   [^WebServer$Builder builder _ handler opts]
