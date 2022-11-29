@@ -31,12 +31,14 @@ alias you will use to be able to run it.
 
 ### Clojure CLI/deps.edn
 
+Add to your `:deps`
+
 ``` clojure
 com.s-exp/mina {:mvn/version "0.1.0"}
-
-;; or 
-
-{com.s-exp/mina {:git/sha "..." :git/url "https://github.com/mpenet/mina"}}
+```
+or 
+``` clojure
+com.s-exp/mina {:git/sha "..." :git/url "https://github.com/mpenet/mina"}
 ```
 
 ### Leiningen
@@ -44,7 +46,6 @@ com.s-exp/mina {:mvn/version "0.1.0"}
 ``` clojure
 [com.s-exp/mina "0.1.0"]
 ```
-
 
 ## License
 
