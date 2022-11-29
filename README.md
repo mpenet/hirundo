@@ -1,6 +1,6 @@
 # mīnā
 
-[![Clojars Project](https://img.shields.io/clojars/v/com.s-exp/mina.svg)](https://clojars.org/com.s-exp/mina)
+[![Clojars Project](https://img.shields.io/clojars/v/com.s-exp/mina.svg)](https://.org/com.s-exp/mina)
 
 Helidon/Nima [RING](https://github.com/ring-clojure/ring/blob/master/SPEC) compliant adapter for clojure, loom based 
 
@@ -31,21 +31,7 @@ alias you will use to be able to run it.
 
 ### Clojure CLI/deps.edn
 
-Add to your `:deps`
-
-``` clojure
-com.s-exp/mina {:mvn/version "0.1.0"}
-```
-or 
-``` clojure
-com.s-exp/mina {:git/sha "..." :git/url "https://github.com/mpenet/mina"}
-```
-
-### Leiningen
-
-``` clojure
-[com.s-exp/mina "0.1.0"]
-```
+https://.org/com.s-exp/mina
 
 ## License
 
