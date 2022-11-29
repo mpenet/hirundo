@@ -29,8 +29,6 @@ Helidon/Nima is alpha2 status right now, so do not use this in prod please.
 Note: You need to use java19 and add `:jvm-opts ["--enable-preview"]` to the
 alias you will use to be able to run it.
 
-### Clojure CLI/deps.edn
-
 https://clojars.org/com.s-exp/mina
 
 ## License
