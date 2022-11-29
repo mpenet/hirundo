@@ -138,8 +138,7 @@
                "HTTP" :http
                "HTTPS" :https)
      :protocol (server-request->ring-protocol server-request)
-     ;; TODO add missing ssl keys
-     ;; :ssl-client-cert (some-> request .remotePeer .tlsCertificates)
+     :ssl-client-cert (-> server-request .remotePeer .tlsCertificates (.orElse nil))
      :request-method (server-request->ring-method server-request)
      :headers headers
      ::server-request server-request

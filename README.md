@@ -1,4 +1,4 @@
-# com.s-exp/mina
+# mīnā
 
 [![Clojars Project](https://img.shields.io/clojars/v/com.s-exp/mina.svg)](https://clojars.org/com.s-exp/mina)
 
