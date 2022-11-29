@@ -15,10 +15,8 @@
  {:test {:jvm-opts ["--enable-preview"]
          :extra-paths ["test"]
          :extra-deps {org.clojure/test.check {:mvn/version "1.1.1"}
-                      com.exoscale/eftest {:mvn/version "1.0.0"}}
-         ;; :exec-fn nima.test-runner/-main
-         ;; :main-opts ["-m" "blabla"]
-         }
+                      eftest/eftest {:mvn/version "0.6.0"}
+                      clj-http/clj-http {:mvn/version "3.12.0"}}}
   :project
   {:extra-deps {io.github.exoscale/tools.project {:git/sha "5f24196ebea4dc6e601d201d97b463ea26923c7e"}}
    :ns-default exoscale.tools.project

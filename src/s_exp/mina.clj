@@ -124,13 +124,13 @@
                                     ^ServerResponse server-response]
   (let [headers (server-request->ring-headers server-request)
         prologue (.prologue server-request)
-        remote-peer (.remotePeer server-request)
+        address ^java.net.InetSocketAddress (.address (.remotePeer server-request))
         local-peer (.localPeer server-request)
         content (.content server-request)]
     {:body (when-not (.consumed content) (.inputStream content))
      :server-port (.port local-peer)
      :server-name (.host local-peer)
-     :remote-addr (.address remote-peer)
+     :remote-addr (-> address .getAddress .getHostAddress)
      :uri (.rawPath (.path server-request))
      :query-string (let [query (.rawValue (.query server-request))]
                      (when (not= "" query) query))
