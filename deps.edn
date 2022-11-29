@@ -1,4 +1,4 @@
-{:exoscale.project/lib com.s-exp/nima
+{:exoscale.project/lib com.s-exp/mina
  :exoscale.project/version-file "VERSION"
  :exoscale.project/deploy? true
  :slipset.deps-deploy/exec-args {:installer :remote

@@ -1,4 +1,4 @@
-# com.s-exp/nima
+# com.s-exp/mina
 
 Helidon/Nima [RING](https://github.com/ring-clojure/ring/blob/master/SPEC) compliant adapter for clojure, loom based 
 
@@ -7,10 +7,10 @@ Helidon/Nima is alpha2 status right now, so do not use this in prod please.
 
 
 ```clojure
-(require 's-exp.nima)
+(require 's-exp.mina)
 
 (def server
-  (nima/start! {:port 8080
+  (mina/start! {:port 8080
                 :handler
                 (fn [{:as request :keys [body headers ...]}]
                   {:status 200
@@ -18,14 +18,14 @@ Helidon/Nima is alpha2 status right now, so do not use this in prod please.
                    :headers {"Something" "Interesting"}})}))
 ;; ...
 
-(nima/stop! server)
+(mina/stop! server)
 
 ```
 
 ## Installation
 
 ```clojure
-{:deps {com.s-exp/nima {:git/sha "..." :git/url "https://github.com/mpenet/nima"}}}
+{:deps {com.s-exp/mina {:git/sha "..." :git/url "https://github.com/mpenet/mina"}}}
 ```
 
 Note: You need to use java19 and add `:jvm-opts ["--enable-preview"]` to the alias you will use to be able to run it.

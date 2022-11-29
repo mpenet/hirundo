@@ -1,4 +1,4 @@
-(ns s-exp.nima
+(ns s-exp.mina
   (:require [clojure.java.io :as io]
             [clojure.string :as str])
   (:import (io.helidon.common.http Http$HeaderValue Http$Status)
@@ -228,14 +228,11 @@
 ;; ;; (def r {:status 200 :body ["foo\n" "bar"] :headers {:foo [1 2] :bar ["bay"]}})
 ;; (def r {:status 200 :body nil})
 ;; (def s (start!
-;;         {;; :default-socket
-;;          ;; {:write-queue-length 100
-;;          ;;  :backlog 3000}
-;;          :port 8081
+;;         {:port 8081
 ;;          :handler (fn [req]
 ;;                     r)}))
 ;; (stop! s)
 
-;; https://api.github.com/repos/mpenet/nima/commits/main?per_page=1
+;; https://api.github.com/repos/mpenet/mina/commits/main?per_page=1
 
 
