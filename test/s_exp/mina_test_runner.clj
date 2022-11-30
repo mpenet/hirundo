@@ -4,11 +4,11 @@
             eftest.report.pretty
             [eftest.runner :as ef]))
 
-(def default-opts
+(def default-options
   {:dir "test"
    :capture-output? true
    :fail-fast? true
-   :multithread? :namespaces
+   :multithread? :vars
    :reporters [eftest.report.pretty/report]})
 
 (defn- ret->exit-code
@@ -31,8 +31,8 @@
         (report m)))))
 
 (defn run
-  [opts]
-  (let [opts (merge default-opts opts)]
-    (-> (ef/find-tests (:dir opts))
-        (ef/run-tests opts)
+  [options]
+  (let [options (merge default-options options)]
+    (-> (ef/find-tests (:dir options))
+        (ef/run-tests options)
         ret->exit-code)))
