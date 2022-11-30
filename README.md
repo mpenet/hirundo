@@ -26,7 +26,7 @@ Helidon/Nima is alpha2 status right now, so do not use this in prod please.
 
 `:port` - port the server listens to, default to 8080
 
-`:default-socket` - map-of :write-queue-length :backlog :max-payload-size :receive-buffer-size
+`:default-socket` - map-of `:write-queue-length` `:backlog` `:max-payload-size` `:receive-buffer-size`
 
 `:ssl-context` - A `javax.net.ssl.SSLContext`
 
@@ -34,7 +34,12 @@ Helidon/Nima is alpha2 status right now, so do not use this in prod please.
 
 ... more to come
 
-You can also configure the server via an application.yml file in the resources (tbd).
+You can hook into the server builder via `s-exp.mina/set-server-option!`
+multimethod at runtime and add/modify whatever you want if you need anything
+extra we don't provide (yet).
+
+You can also configure the server via an application.yml file in the resources
+(tbd).
 
 ## Installation
 
