@@ -211,13 +211,21 @@
 
 (defn start!
   "Starts a new server.
-  See `default-server-options` to see supported options.  Requires at the very
-  least a :handler key, to be used as ring handler"
-  ([handler opts]
-   (start! (assoc opts :handler handler)))
-  ([opts]
-   (let [opts (merge default-server-options opts)]
-     (-> (server-builder opts)
+  
+  `options` can contain:
+  
+  * `:port` - port the server listens to, default to 8080
+
+  * `:default-socket` - map-of :write-queue-length :backlog :max-payload-size :receive-buffer-size
+
+  * `:ssl-context` - A `javax.net.ssl.SSLContext`
+
+  * `:tls` - A `io.helidon.nima.common.tls.Tls` instance"
+  ([handler options]
+   (start! (assoc options :handler handler)))
+  ([options]
+   (let [options (merge default-server-options options)]
+     (-> (server-builder options)
          (.start)))))
 
 (defn stop!
