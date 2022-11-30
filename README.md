@@ -12,17 +12,29 @@ Helidon/Nima is alpha2 status right now, so do not use this in prod please.
 (require 's-exp.mina)
 
 (def server
-  (mina/start! {:port 8080
-                :handler
-                (fn [{:as request :keys [body headers ...]}]
+  (mina/start! (fn [{:as request :keys [body headers ...]}]
                   {:status 200
                    :body "Hello world"
-                   :headers {"Something" "Interesting"}})}))
+                   :headers {"Something" "Interesting"}})
+               {:port 8080}))
 ;; ...
 
 (mina/stop! server)
-
 ```
+
+## Supported options
+
+`:port` - port the server listens to, default to 8080
+
+`:default-socket` - map-of :write-queue-length :backlog :max-payload-size :receive-buffer-size
+
+`:ssl-context` - A `javax.net.ssl.SSLContext`
+
+`:tls` - A `io.helidon.nima.common.tls.Tls` instance
+
+... more to come
+
+You can also configure the server via an application.yml file in the resources (tbd).
 
 ## Installation
 

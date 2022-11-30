@@ -213,10 +213,12 @@
   "Starts a new server.
   See `default-server-options` to see supported options.  Requires at the very
   least a :handler key, to be used as ring handler"
-  [opts]
-  (let [opts (merge default-server-options opts)]
-    (-> (server-builder opts)
-        (.start))))
+  ([handler opts]
+   (start! (assoc opts :handler handler)))
+  ([opts]
+   (let [opts (merge default-server-options opts)]
+     (-> (server-builder opts)
+         (.start)))))
 
 (defn stop!
   "Stops server, noop if already stopped"
@@ -224,12 +226,9 @@
   (.stop server))
 
 ;; ;; (def r {:status 200 :body (java.io.ByteArrayInputStream. (.getBytes "bar")) :headers {:foo [1 2] :bar ["bay"]}})
-;; ;; (def r {:status 200 :body ["foo\n" "bar"] :headers {:foo [1 2] :bar ["bay"]}})
-;; (def r {:status 200 :body nil})
-;; (def s (start!
-;;         {:port 8081
-;;          :handler (fn [req]
-;;                     r)}))
+;; (def r {:status 200 :body ["foo\n" "bar"] :headers {:foo [1 2] :bar ["bay"]}})
+(def r {:status 200 :body nil})
+(def s (start! (fn [req] r) {:port 8081}))
 ;; (stop! s)
 
 ;; https://api.github.com/repos/mpenet/mina/commits/main?per_page=1
