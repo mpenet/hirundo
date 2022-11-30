@@ -6,7 +6,7 @@
 
 **Warning** It's early days so expect breakage.
 
-Helidon/Nima is alpha2 status right now, so do not use this in prod please. 
+[Helidon/Nima](https://helidon.io/nima) is alpha2 status right now, so do not use this in prod please. 
 
 
 ```clojure
