@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str])
   (:import (io.helidon.common.http Http$HeaderValue Http$Status)
+           (io.helidon.common.socket SocketOptions$Builder)
            (io.helidon.nima.common.tls Tls)
            (io.helidon.nima.webserver ListenerConfiguration$Builder WebServer WebServer$Builder)
            (io.helidon.nima.webserver.http
@@ -11,6 +12,7 @@
             ServerRequest
             ServerResponse)
            (java.io FileInputStream InputStream OutputStream)
+           (java.time Duration)
            (javax.net.ssl SSLContext)))
 
 (set! *warn-on-reflection* true)
@@ -172,22 +174,52 @@
   [^WebServer$Builder builder _ port _]
   (.port builder (int port)))
 
+(defn- set-connection-options!
+  [socket-options-builder {:keys [socket-receive-buffer-size socket-send-buffer-size
+                                  socket-reuse-address socket-keep-alive tcp-no-delay
+                                  read-timeout connect-timeout]
+                           :or {socket-receive-buffer-size 32768
+                                socket-send-buffer-size 32768
+                                socket-reuse-address true
+                                socket-keep-alive true
+                                tcp-no-delay false
+                                read-timeout 30000
+                                connect-timeout 10000}}]
+  (doto ^SocketOptions$Builder socket-options-builder
+    (.socketReceiveBufferSize (into socket-receive-buffer-size))
+    (.socketSendBufferSize (int socket-send-buffer-size))
+    (.socketReuseAddress (boolean socket-reuse-address))
+    (.socketKeepAlive (boolean socket-keep-alive))
+    (.tcpNoDelay (boolean tcp-no-delay))
+    (.readTimeout (Duration/ofMillis read-timeout))
+    (.connectTimeout (Duration/ofMillis connect-timeout))))
+
+(defn- set-listener-configuration!
+  [listener-configuration-builder {:keys [write-queue-length backlog max-payload-size receive-buffer-size
+                                          connection-options]
+                                   :or {write-queue-length 1
+                                        backlog 1024
+                                        max-payload-size -1}}]
+  (let [listener (doto ^ListenerConfiguration$Builder listener-configuration-builder
+                   (.writeQueueLength (int write-queue-length))
+                   (.backlog (int backlog))
+                   (.maxPayloadSize (long max-payload-size)))]
+    (when receive-buffer-size
+      (.receiveBufferSize listener receive-buffer-size))
+    (when (seq connection-options)
+      (.connectionOptions listener
+                          (reify java.util.function.Consumer
+                            (accept [_ socket-options-builder]
+                              (set-connection-options! socket-options-builder
+                                                       connection-options)))))))
+
 (defmethod set-server-option! :default-socket
-  [^WebServer$Builder builder _
-   {:keys [write-queue-length backlog max-payload-size receive-buffer-size]
-    :or {write-queue-length 1
-         backlog 1024
-         max-payload-size -1}} _]
+  [^WebServer$Builder builder _ opts _]
   (doto builder
     (.defaultSocket
      (reify java.util.function.Consumer
        (accept [_ listener-configuration-builder]
-         (let [listener (doto ^ListenerConfiguration$Builder listener-configuration-builder
-                          (.writeQueueLength (int write-queue-length))
-                          (.backlog (int backlog))
-                          (.maxPayloadSize (long max-payload-size)))]
-           (when receive-buffer-size
-             (.receiveBufferSize listener receive-buffer-size))))))))
+         (set-listener-configuration! listener-configuration-builder opts))))))
 
 (defmethod set-server-option! :ssl-context
   [^WebServer$Builder builder _ ^SSLContext ssl-context opts]
@@ -239,11 +271,11 @@
   [^WebServer server]
   (.stop server))
 
-;; ;; (def r {:status 200 :body (java.io.ByteArrayInputStream. (.getBytes "bar")) :headers {:foo [1 2] :bar ["bay"]}})
-;; (def r {:status 200 :body ["foo\n" "bar"] :headers {:foo [1 2] :bar ["bay"]}})
-;; (def r {:status 200 :body nil})
-;; (def s (start! (fn [req] r) {:host "0.0.0.0" :port 8081}))
-;; (stop! s)
+;; (def r {:status 200 :body (java.io.ByteArrayInputStream. (.getBytes "bar")) :headers {:foo [1 2] :bar ["bay"]}})
+(def r {:status 200 :body ["foo\n" "bar"] :headers {:foo [1 2] :bar ["bay"]}})
+(def r {:status 200 :body nil})
+(def s (start! (fn [req] r) {:host "0.0.0.0" :port 8081 :default-socket {:connection-options {:read-timeout 1000}}}))
+(stop! s)
 
 ;; https://api.github.com/repos/mpenet/mina/commits/main?per_page=1
 
