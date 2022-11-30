@@ -164,6 +164,10 @@
 (defmethod set-server-option! :default [builder _ _ _]
   builder)
 
+(defmethod set-server-option! :host
+  [^WebServer$Builder builder _ host _]
+  (.host builder host))
+
 (defmethod set-server-option! :port
   [^WebServer$Builder builder _ port _]
   (.port builder (int port)))
@@ -213,14 +217,16 @@
   "Starts a new server.
   
   `options` can contain:
+
+  * `:host` - host of the default socket
   
   * `:port` - port the server listens to, default to 8080
 
   * `:default-socket` - map-of :write-queue-length :backlog :max-payload-size :receive-buffer-size
 
-  * `:ssl-context` - A `javax.net.ssl.SSLContext`
+  * `:ssl-context` - a `javax.net.ssl.SSLContext`
 
-  * `:tls` - A `io.helidon.nima.common.tls.Tls` instance"
+  * `:tls` - a `io.helidon.nima.common.tls.Tls` instance"
   ([handler options]
    (start! (assoc options :handler handler)))
   ([options]
@@ -235,8 +241,8 @@
 
 ;; ;; (def r {:status 200 :body (java.io.ByteArrayInputStream. (.getBytes "bar")) :headers {:foo [1 2] :bar ["bay"]}})
 ;; (def r {:status 200 :body ["foo\n" "bar"] :headers {:foo [1 2] :bar ["bay"]}})
-(def r {:status 200 :body nil})
-(def s (start! (fn [req] r) {:port 8081}))
+;; (def r {:status 200 :body nil})
+;; (def s (start! (fn [req] r) {:host "0.0.0.0" :port 8081}))
 ;; (stop! s)
 
 ;; https://api.github.com/repos/mpenet/mina/commits/main?per_page=1
