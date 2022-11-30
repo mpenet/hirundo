@@ -24,13 +24,15 @@ Helidon/Nima is alpha2 status right now, so do not use this in prod please.
 
 ## Supported options
 
-`:port` - port the server listens to, default to 8080
+* `:host` - host of the default socket
 
-`:default-socket` - map-of `:write-queue-length` `:backlog` `:max-payload-size` `:receive-buffer-size`
+* `:port` - port the server listens to, default to 8080
 
-`:ssl-context` - A `javax.net.ssl.SSLContext`
+* `:default-socket` - map-of `:write-queue-length` `:backlog` `:max-payload-size` `:receive-buffer-size`
 
-`:tls` - A `io.helidon.nima.common.tls.Tls` instance
+* `:ssl-context` - A `javax.net.ssl.SSLContext`
+
+* `:tls` - A `io.helidon.nima.common.tls.Tls` instance
 
 ... more to come
 
