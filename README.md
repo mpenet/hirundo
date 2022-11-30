@@ -28,7 +28,7 @@ Helidon/Nima is alpha2 status right now, so do not use this in prod please.
 
 * `:port` - port the server listens to, default to 8080
 
-* `:default-socket` - map-of :write-queue-length :backlog :max-payload-size :receive-buffer-size `:connection-options`(map-of `:socket-receive-buffer-size` `:socket-send-buffer-size` `:socket-reuse-address` `:socket-keep-alive` `:tcp-no-delay` `:read-timeout` `:connect-timeout`)
+* `:default-socket` - map-of `:write-queue-length` `:backlog` `:max-payload-size` `:receive-buffer-size` `:connection-options`(map-of `:socket-receive-buffer-size` `:socket-send-buffer-size` `:socket-reuse-address` `:socket-keep-alive` `:tcp-no-delay` `:read-timeout` `:connect-timeout`)
 
 * `:ssl-context` - A `javax.net.ssl.SSLContext`
 
