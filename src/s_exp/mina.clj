@@ -272,10 +272,10 @@
   (.stop server))
 
 ;; (def r {:status 200 :body (java.io.ByteArrayInputStream. (.getBytes "bar")) :headers {:foo [1 2] :bar ["bay"]}})
-(def r {:status 200 :body ["foo\n" "bar"] :headers {:foo [1 2] :bar ["bay"]}})
-(def r {:status 200 :body nil})
-(def s (start! (fn [req] r) {:host "0.0.0.0" :port 8081 :default-socket {:connection-options {:read-timeout 1000}}}))
-(stop! s)
+;; (def r {:status 200 :body ["foo\n" "bar"] :headers {:foo [1 2] :bar ["bay"]}})
+;; (def r {:status 200 :body nil})
+;; (def s (start! (fn [req] r) {:host "0.0.0.0" :port 8081 :default-socket {:connection-options {:read-timeout 1000}}}))
+;; (stop! s)
 
 ;; https://api.github.com/repos/mpenet/mina/commits/main?per_page=1
 
