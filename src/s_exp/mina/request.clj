@@ -50,9 +50,7 @@
 
 (defn ring-request [^ServerRequest server-request
                     ^ServerResponse server-response]
-  (let [headers (ring-headers server-request)
-        prologue (.prologue server-request)
-        address ^java.net.InetSocketAddress (.address (.remotePeer server-request))
+  (let [address ^java.net.InetSocketAddress (.address (.remotePeer server-request))
         local-peer (.localPeer server-request)
         content (.content server-request)]
     {:body (when-not (.consumed content) (.inputStream content))
@@ -62,13 +60,13 @@
      :uri (.rawPath (.path server-request))
      :query-string (let [query (.rawValue (.query server-request))]
                      (when (not= "" query) query))
-     :scheme (case (.protocol prologue)
+     :scheme (case (.protocol (.prologue server-request))
                "HTTP" :http
                "HTTPS" :https)
      :protocol (ring-protocol server-request)
      :ssl-client-cert (-> server-request .remotePeer .tlsCertificates (.orElse nil))
      :request-method (ring-method server-request)
-     :headers headers
+     :headers (ring-headers server-request)
      ::server-request server-request
      ::server-response server-response}))
 
