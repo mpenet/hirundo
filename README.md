@@ -40,9 +40,6 @@ You can hook into the server builder via `s-exp.mina/set-server-option!`
 multimethod at runtime and add/modify whatever you want if you need anything
 extra we don't provide (yet).
 
-You can also configure the server via an application.yml file in the resources
-(tbd).
-
 ## Installation
 
 Note: You need to use java19 and add `:jvm-opts ["--enable-preview"]` to the
