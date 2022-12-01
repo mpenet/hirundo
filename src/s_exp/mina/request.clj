@@ -50,6 +50,7 @@
   (case (-> server-request
             .prologue
             .protocolVersion)
+    "1.0" "HTTP/1.0"
     "1.1" "HTTP/1.1"
     "2.0" "HTTP/2"))
 
