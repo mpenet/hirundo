@@ -66,9 +66,7 @@
      :uri (.rawPath (.path server-request))
      :query-string (let [query (.rawValue (.query server-request))]
                      (when (not= "" query) query))
-     :scheme (if (.isSecure server-request)
-               :https
-               :http)
+     :scheme (if (.isSecure server-request) :https :http)
      :protocol (ring-protocol server-request)
      :ssl-client-cert (some-> server-request .remotePeer .tlsCertificates (.orElse nil) first)
      :request-method (ring-method server-request)

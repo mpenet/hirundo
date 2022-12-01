@@ -32,7 +32,13 @@
 
 (deftest test-query-string
   (with-server {:handler (fn [req] {:body (:query-string req)})}
-    (is (-> (client/get (str *endpoint* "?foo=bar")) :body (= "foo=bar")))))
+    (is (-> (client/get (str *endpoint* "?foo=bar")) :body (= "foo=bar"))))
+
+  (with-server {:handler (fn [req] {:body (:query-string req)})}
+    (is (-> (client/get (str *endpoint* "?")) :body (= ""))))
+
+  (with-server {:handler (fn [req] {:body (:query-string req)})}
+    (is (-> (client/get (str *endpoint* "")) :body (= "")))))
 
 (deftest test-method
   (with-server {:handler (fn [req] {:body (str (:request-method req))})}
