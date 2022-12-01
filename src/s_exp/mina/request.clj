@@ -53,8 +53,9 @@
     "1.1" "HTTP/1.1"
     "2.0" "HTTP/2"))
 
-(defn ring-request [^ServerRequest server-request
-                    ^ServerResponse server-response]
+(defn ring-request
+  [^ServerRequest server-request
+   ^ServerResponse server-response]
   (let [address ^java.net.InetSocketAddress (.address (.remotePeer server-request))
         local-peer (.localPeer server-request)
         content (.content server-request)]

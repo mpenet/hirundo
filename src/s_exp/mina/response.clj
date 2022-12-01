@@ -41,9 +41,12 @@
                                        v)))
         headers))
 
+(defn set-status!
+  [^ServerResponse server-response status]
+  (.status server-response (Http$Status/create (or status 200))))
+
 (defn set-response!
-  [^ServerResponse server-response {:as _ring-response
-                                    :keys [body headers status]}]
+  [^ServerResponse server-response {:keys [body headers status]}]
   (set-headers! server-response headers)
-  (.status server-response (Http$Status/create (or status 200)))
+  (set-status! server-response status)
   (write-body! body server-response))
