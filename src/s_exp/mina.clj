@@ -43,8 +43,6 @@
 
   * `:default-socket` - map-of :write-queue-length :backlog :max-payload-size :receive-buffer-size `:connection-options`(map-of `:socket-receive-buffer-size` `:socket-send-buffer-size` `:socket-reuse-address` `:socket-keep-alive` `:tcp-no-delay` `:read-timeout` `:connect-timeout`)
 
-  * `:ssl-context` - a `javax.net.ssl.SSLContext`
-
   * `:tls` - a `io.helidon.nima.common.tls.Tls` instance"
   ([handler options]
    (start! (assoc options :handler handler)))

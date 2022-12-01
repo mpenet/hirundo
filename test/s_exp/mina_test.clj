@@ -1,10 +1,16 @@
 (ns s-exp.mina-test
   "Tests vars run in parallel"
   (:require [clj-http.client :as client]
+            [clojure.string :as str]
             [clojure.test :refer :all]
-            [s-exp.mina :as m]))
+            [less.awful.ssl :as ls]
+            [s-exp.mina :as m])
+  (:import (io.helidon.nima.common.tls Tls TlsClientAuth)))
 
 (def ^:dynamic *endpoint*)
+
+(defn status-ok? [response]
+  (some-> response :status (= 200)))
 
 (defmacro with-server [options & body]
   `(let [server# (m/start! ~options)]
@@ -62,3 +68,34 @@
 
   (with-server {:handler (fn [req] {:body (java.io.ByteArrayInputStream. (.getBytes "yes"))})}
     (is (-> (client/get *endpoint*) :body (= "yes")))))
+
+(defn tls []
+  (-> (Tls/builder)
+      (.tlsClientAuth TlsClientAuth/REQUIRED)
+      (.trustAll true)
+      (.sslContext (ls/ssl-context "test/server.key"
+                                   "test/server.crt"
+                                   "test/server.crt"))
+      (.endpointIdentificationAlgorithm (Tls/ENDPOINT_IDENTIFICATION_NONE))
+      (.build)))
+
+(deftest test-ssl-context
+  (with-server {:handler (fn [req] {})
+                :tls (tls)}
+    (let [endpoint (str/replace *endpoint* "http://" "https://")]
+      (is (thrown? Exception (client/get endpoint)))
+      (is (status-ok? (client/get endpoint {:insecure? true})))
+      (is (status-ok? (client/get endpoint
+                                  {:insecure? true
+                                   :keystore "test/keystore.jks"
+                                   :keystore-pass "password"
+                                   :trust-store "test/keystore.jks"
+                                   :trust-store-pass "password"})))))
+
+  (with-server {:handler (fn [req] {:body (str (:scheme req))}) :tls (tls)}
+    (is (-> (client/get (str/replace *endpoint* "http" "https")
+                        {:insecure? true})
+            :body (= ":https")))))
+
+
+

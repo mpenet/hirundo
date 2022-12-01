@@ -15,6 +15,7 @@
  {:test {:jvm-opts ["--enable-preview"]
          :extra-paths ["test"]
          :extra-deps {org.clojure/test.check {:mvn/version "1.1.1"}
+                      less-awful-ssl/less-awful-ssl {:mvn/version "1.0.6"}
                       eftest/eftest {:mvn/version "0.6.0"}
                       clj-http/clj-http {:mvn/version "3.12.0"}}}
   :project

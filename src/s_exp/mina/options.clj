@@ -1,9 +1,7 @@
 (ns s-exp.mina.options
   (:import (io.helidon.common.socket SocketOptions$Builder)
-           (io.helidon.nima.common.tls Tls)
            (io.helidon.nima.webserver ListenerConfiguration$Builder WebServer$Builder)
-           (java.time Duration)
-           (javax.net.ssl SSLContext)))
+           (java.time Duration)))
 
 (defmulti set-server-option! (fn [_builder k _v _options] k))
 
@@ -84,16 +82,8 @@
          (set-listener-configuration! listener-configuration-builder
                                       default-socket))))))
 
-(defmethod set-server-option! :ssl-context
-  [^WebServer$Builder builder _ ^SSLContext ssl-context _options]
-  (doto builder
-    (.tls (-> (Tls/builder)
-              (.sslContext ssl-context)
-              (.build)))))
-
 (defmethod set-server-option! :tls
-  [^WebServer$Builder builder _ tls _options]
-  (doto builder
-    (.tls tls)))
+  [^WebServer$Builder builder _ tls _]
+  (doto builder (.tls tls)))
 
 

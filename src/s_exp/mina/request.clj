@@ -26,11 +26,12 @@
               (some-> server-request .headers))
       persistent!))
 
-(defn ring-method [^ServerRequest server-request]
+(defn ring-method
+  [^ServerRequest server-request]
   (let [method (-> server-request
                    .prologue
                    .method
-                   .name)]
+                   .text)]
     ;; mess with the string as a last resort, try to match against static values
     ;; first
     (case method
@@ -44,9 +45,13 @@
       "PATCH" :patch
       (keyword (str/lower-case method)))))
 
-(defn ring-protocol [^ServerRequest server-request]
-  (let [prologue (.prologue server-request)]
-    (str (.protocol prologue) "/" (.protocolVersion prologue))))
+(defn ring-protocol
+  [^ServerRequest server-request]
+  (case (-> server-request
+            .prologue
+            .protocolVersion)
+    "1.1" "HTTP/1.1"
+    "2.0" "HTTP/2"))
 
 (defn ring-request [^ServerRequest server-request
                     ^ServerResponse server-response]
@@ -60,11 +65,11 @@
      :uri (.rawPath (.path server-request))
      :query-string (let [query (.rawValue (.query server-request))]
                      (when (not= "" query) query))
-     :scheme (case (.protocol (.prologue server-request))
-               "HTTP" :http
-               "HTTPS" :https)
+     :scheme (if (.isSecure server-request)
+               :https
+               :http)
      :protocol (ring-protocol server-request)
-     :ssl-client-cert (-> server-request .remotePeer .tlsCertificates (.orElse nil))
+     :ssl-client-cert (some-> server-request .remotePeer .tlsCertificates (.orElse nil) first)
      :request-method (ring-method server-request)
      :headers (ring-headers server-request)
      ::server-request server-request
