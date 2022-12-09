@@ -1,5 +1,6 @@
 (ns s-exp.mina.response
-  (:import (io.helidon.common.http Http$Status Http$Header)
+  (:require [s-exp.mina.utils :as u])
+  (:import (io.helidon.common.http HeaderEnum Http$Header Http$Status)
            (io.helidon.nima.webserver.http ServerResponse)
            (java.io FileInputStream InputStream OutputStream)))
 
@@ -33,20 +34,31 @@
   (write-body! [o server-response]
     (.send ^ServerResponse server-response o)))
 
+(def header-name
+  (eval `(fn [ring-header-key#]
+           (case ring-header-key#
+             ~@(mapcat (fn [[k v]]
+                         [k (symbol "io.helidon.common.http.Http$Header" (.name v))])
+                       (u/enum->map HeaderEnum))
+             (Http$Header/create (name ring-header-key#))))))
+
 (defn set-headers!
   [^ServerResponse server-response headers]
-  (run! (fn [[k v]]
-          (.header server-response
-                   (Http$Header/create (Http$Header/create (name k))
-                                       v)))
-        headers))
+  (when headers
+    (run! (fn [[k v]]
+            (.header server-response
+                     (Http$Header/create (header-name k)
+                                         v)))
+          headers)))
 
-(defn set-status!
+(defn- set-status!
   [^ServerResponse server-response status]
-  (.status server-response (Http$Status/create (or status 200))))
+  (when status
+    (.status server-response (Http$Status/create status))))
 
 (defn set-response!
   [^ServerResponse server-response {:keys [body headers status]}]
   (set-headers! server-response headers)
   (set-status! server-response status)
   (write-body! body server-response))
+

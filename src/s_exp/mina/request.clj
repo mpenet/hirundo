@@ -23,7 +23,7 @@
                         (header-key->ring-header-key (.name h))
                         (.values h)))
               (transient {})
-              (some-> server-request .headers))
+              (.headers server-request))
       persistent!))
 
 (defn ring-method
