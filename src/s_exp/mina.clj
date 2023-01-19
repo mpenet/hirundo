@@ -5,6 +5,8 @@
 
 (set! *warn-on-reflection* true)
 
+(def default-options {:connection-provider false})
+
 (defn- server-builder
   ^WebServer$Builder
   [options]
@@ -28,7 +30,7 @@
   ([handler options]
    (start! (assoc options :handler handler)))
   ([options]
-   (-> (server-builder options)
+   (-> (server-builder (merge default-options options))
        (.start))))
 
 (defn stop!
@@ -37,11 +39,10 @@
   (.stop server))
 
 ;; (def r {:status 200 :body (java.io.ByteArrayInputStream. (.getBytes "bar")) :headers {:foo [1 2] :bar ["bay"]}})
-;; (def r {:status 200 :body ["foo\n" "bar"] :headers {:foo [1 2] :bar ["bay"]}})
-;; (def r {:status 200 :body nil})
-;; (def s (start! (fn [req] r) {:host "0.0.0.0" :port 8080}))
+(def r {})
+(def s (start! (fn [req] r) {:host "0.0.0.0" :port 8080 :default-socket {:write-queue-length 10240}}))
 
-;; (stop! s)
+(stop! s)
 
 ;; https://api.github.com/repos/mpenet/mina/commits/main?per_page=1
 

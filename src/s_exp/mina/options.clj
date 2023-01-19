@@ -55,8 +55,9 @@
     (.backlog listener-configuration-builder
               (int backlog)))
 
-  (when max-payload-size listener-configuration-builder
-        (.maxPayloadSize (long max-payload-size)))
+  (when max-payload-size
+    (.maxPayloadSize listener-configuration-builder
+                     (long max-payload-size)))
 
   (when write-queue-length
     (.writeQueueLength listener-configuration-builder
