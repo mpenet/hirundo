@@ -39,10 +39,10 @@
   (.stop server))
 
 ;; (def r {:status 200 :body (java.io.ByteArrayInputStream. (.getBytes "bar")) :headers {:foo [1 2] :bar ["bay"]}})
-(def r {})
-(def s (start! (fn [req] r) {:host "0.0.0.0" :port 8080 :default-socket {:write-queue-length 10240}}))
+;; (def r {})
+;; (def s (start! (fn [req] r) {:host "0.0.0.0" :port 8080 :default-socket {:write-queue-length 10240}}))
 
-(stop! s)
+;; (stop! s)
 
 ;; https://api.github.com/repos/mpenet/mina/commits/main?per_page=1
 
