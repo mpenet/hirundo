@@ -1,7 +1,9 @@
 (ns s-exp.mina.request
   (:require [clojure.java.io :as io]
-            [clojure.string :as str])
-  (:import (io.helidon.common.http Http$HeaderValue)
+            [clojure.set :as set]
+            [clojure.string :as str]
+            [potemkin :as p])
+  (:import (io.helidon.common.http Http$HeaderValue ServerRequestHeaders)
            (io.helidon.nima.webserver.http ServerRequest ServerResponse)))
 
 ;; Try to decode headers against a static table first, and fallback to
@@ -16,6 +18,7 @@
                             line-seq))
              (str/lower-case k#)))))
 
+;; TODO could use a derived-map
 (defn ring-headers
   [^ServerRequest server-request]
   (-> (reduce (fn [m ^Http$HeaderValue h]
@@ -54,24 +57,22 @@
     "1.1" "HTTP/1.1"
     "2.0" "HTTP/2"))
 
-(defn ring-request
+(p/def-derived-map RingRequest
   [^ServerRequest server-request
    ^ServerResponse server-response]
-  (let [address ^java.net.InetSocketAddress (.address (.remotePeer server-request))
-        local-peer (.localPeer server-request)
-        content (.content server-request)]
-    {:body (when-not (.consumed content) (.inputStream content))
-     :server-port (.port local-peer)
-     :server-name (.host local-peer)
-     :remote-addr (-> address .getAddress .getHostAddress)
-     :uri (.rawPath (.path server-request))
-     :query-string (let [query (.rawValue (.query server-request))]
-                     (when (not= "" query) query))
-     :scheme (if (.isSecure server-request) :https :http)
-     :protocol (ring-protocol server-request)
-     :ssl-client-cert (some-> server-request .remotePeer .tlsCertificates (.orElse nil) first)
-     :request-method (ring-method server-request)
-     :headers (ring-headers server-request)
-     ::server-request server-request
-     ::server-response server-response}))
-
+  :body (let [content (.content server-request)]
+          (when-not (.consumed content) (.inputStream content)))
+  :server-port (.port (.localPeer server-request))
+  :server-name (.host (.localPeer server-request))
+  :remote-addr (let [address ^java.net.InetSocketAddress (.address (.remotePeer server-request))]
+                 (-> address .getAddress .getHostAddress))
+  :uri (.rawPath (.path server-request))
+  :query-string (let [query (.rawValue (.query server-request))]
+                  (when (not= "" query) query))
+  :scheme (if (.isSecure server-request) :https :http)
+  :protocol (ring-protocol server-request)
+  :ssl-client-cert (some-> server-request .remotePeer .tlsCertificates (.orElse nil) first)
+  :request-method (ring-method server-request)
+  :headers (ring-headers server-request)
+  ::server-request server-request
+  ::server-response server-response)
