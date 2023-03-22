@@ -1,12 +1,20 @@
 (ns s-exp.mina.http.request
   (:require [clojure.string :as str]
             [strojure.zmap.core :as zmap])
-  (:import (clojure.lang IEditableCollection IFn IKVReduce
-                         IPersistentMap MapEntry MapEquivalence Util)
-           (clojure.lang PersistentHashMap)
-           (io.helidon.common.http Http$HeaderValue
-                                   Http$Header
-                                   Http$HeaderName ServerRequestHeaders)
+  (:import (clojure.lang
+            IEditableCollection
+            IFn
+            IKVReduce
+            IPersistentMap
+            MapEntry
+            MapEquivalence
+            PersistentHashMap
+            Util)
+           (io.helidon.common.http
+            Http$Header
+            Http$HeaderName
+            Http$HeaderValue
+            ServerRequestHeaders)
            (io.helidon.nima.webserver.http ServerRequest ServerResponse)
            (java.util Map)))
 
@@ -14,21 +22,21 @@
   [s]
   (Http$Header/createFromLowercase s))
 
-(defn header-value
-  ([^Http$Header h hn]
-   (header-value h hn nil))
-  ([^Http$Header h hn not-found]
-   (-> h
-       (.value hn)
+(defn header->value*
+  ([^Http$Header header header-name]
+   (header->value* header header-name nil))
+  ([^Http$Header header header-name not-found]
+   (-> header
+       (.value header-name)
        (.orElse not-found))))
 
-(defn get-header
+(defn header->value
   ([^Http$Header h k]
-   (get-header h k nil))
+   (header->value h k nil))
   ([^Http$Header h k not-found]
-   (header-value h
-                 (header-name k)
-                 not-found)))
+   (header->value* h
+                   (header-name k)
+                   not-found)))
 
 (defn ring-headers*
   [^ServerRequestHeaders headers]
@@ -78,28 +86,28 @@
   (size [_]
     (.size headers))
 
-  (get [this k]
-    (.valAt this k))
+  (get [_ k]
+    (header->value headers k))
 
   MapEquivalence
 
   IFn
-  (invoke [this k]
-    (.valAt this k))
+  (invoke [_ k]
+    (header->value headers k))
 
   (invoke [_this k not-found]
-    (get-header headers k not-found))
+    (header->value headers k not-found))
 
   IPersistentMap
   (valAt [_ k]
-    (get-header headers k))
+    (header->value headers k))
 
   (valAt [_ k not-found]
-    (get-header headers k not-found))
+    (header->value headers k not-found))
 
   (entryAt [_ k]
     (let [hn (header-name k)]
-      (when-let [v (header-value headers hn)]
+      (when-let [v (header->value* headers hn)]
         (MapEntry. (.lowerCase hn) v))))
 
   (containsKey [_ k]
@@ -135,15 +143,19 @@
     (= o (ring-headers this)))
 
   (iterator [_]
-    (.iterator
-     (eduction (map (fn [header]
-                      (MapEntry. (.name header)
-                                 (.value header))))
+    (->> headers
+         (eduction (map (fn [header]
+                          (MapEntry. (.lowerCase (.headerName header))
+                                     (.value header)))))
 
-               headers)))
+         .iterator))
+
   IKVReduce
   (kvreduce [this f init]
-    (.kvreduce ^IKVReduce (ring-headers this) f init))
+    (.kvreduce ^IKVReduce
+     (ring-headers this)
+               f
+               init))
 
   IEditableCollection
   (asTransient [this]
@@ -156,8 +168,8 @@
         (set! persistent-copy (ring-headers* headers))))
 
   Object
-  (toString [this]
-    (.toString (ring-headers this))))
+  (toString [_]
+    (.toString headers)))
 
 (defn ring-request
   [^ServerRequest server-request
