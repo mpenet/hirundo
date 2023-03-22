@@ -162,24 +162,28 @@
 (defn ring-request
   [^ServerRequest server-request
    ^ServerResponse server-response]
-  (-> (.asTransient PersistentHashMap/EMPTY)
-      (.assoc :body (zmap/delay
-                      (let [content (.content server-request)]
-                        (when-not (.consumed content) (.inputStream content)))))
-      (.assoc :server-port (zmap/delay (.port (.localPeer server-request))))
-      (.assoc :server-name (zmap/delay (.host (.localPeer server-request))))
-      (.assoc :remote-addr (zmap/delay
-                             (let [address ^java.net.InetSocketAddress (.address (.remotePeer server-request))]
-                               (-> address .getAddress .getHostAddress))))
-      (.assoc :uri (zmap/delay (.rawPath (.path server-request))))
-      (.assoc :query-string (zmap/delay (let [query (.rawValue (.query server-request))]
-                                          (when (not= "" query) query))))
-      (.assoc :scheme (if (.isSecure server-request) :https :http))
-      (.assoc :protocol (zmap/delay (ring-protocol server-request)))
-      (.assoc :ssl-client-cert (zmap/delay (some-> server-request .remotePeer .tlsCertificates (.orElse nil) first)))
-      (.assoc :request-method (ring-method server-request))
-      (.assoc :headers (->HeaderMapProxy (.headers server-request) nil))
-      (.assoc ::server-request server-request)
-      (.assoc ::server-response server-response)
-      (.persistent)
-      zmap/wrap))
+  (let [qs (let [query (.rawValue (.query server-request))]
+             (when (not= "" query) query))
+        body (let [content (.content server-request)]
+               (when-not (.consumed content) (.inputStream content)))
+        ring-request (-> (.asTransient PersistentHashMap/EMPTY)
+                         ;; delayed
+                         (.assoc :server-port (zmap/delay (.port (.localPeer server-request))))
+                         (.assoc :server-name (zmap/delay (.host (.localPeer server-request))))
+                         (.assoc :remote-addr (zmap/delay
+                                                (let [address ^java.net.InetSocketAddress (.address (.remotePeer server-request))]
+                                                  (-> address .getAddress .getHostAddress))))
+                         (.assoc :ssl-client-cert (zmap/delay (some-> server-request .remotePeer .tlsCertificates (.orElse nil) first)))
+                         ;; realized
+                         (.assoc :uri (.rawPath (.path server-request)))
+                         (.assoc :scheme (if (.isSecure server-request) :https :http))
+                         (.assoc :protocol (ring-protocol server-request))
+                         (.assoc :request-method (ring-method server-request))
+                         (.assoc :headers (->HeaderMapProxy (.headers server-request) nil))
+                         (.assoc ::server-request server-request)
+                         (.assoc ::server-response server-response))
+        ;; optional
+        ring-request (cond-> ring-request
+                       qs (.assoc :query-string qs)
+                       body (.assoc :body body))]
+    (zmap/wrap (.persistent ring-request))))
