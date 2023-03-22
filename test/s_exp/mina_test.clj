@@ -4,7 +4,7 @@
             [clojure.string :as str]
             [clojure.test :refer :all]
             [less.awful.ssl :as ls]
-            [s-exp.mina :as m])
+            [s-exp.mina.http :as m])
   (:import (io.helidon.nima.common.tls Tls TlsClientAuth)))
 
 (def ^:dynamic *endpoint*)

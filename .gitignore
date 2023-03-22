@@ -25,3 +25,6 @@
 /checkouts
 /classes
 /target
+.DS_Store
+/pipeline.lua
+.clj-kondo

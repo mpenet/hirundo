@@ -1,6 +1,6 @@
-(ns s-exp.mina
-  (:require [s-exp.mina.handler]
-            [s-exp.mina.options :as options])
+(ns s-exp.mina.http
+  (:require [s-exp.mina.http.handler]
+            [s-exp.mina.http.options :as options])
   (:import (io.helidon.nima.webserver WebServer WebServer$Builder)))
 
 (set! *warn-on-reflection* true)
@@ -38,9 +38,17 @@
   [^WebServer server]
   (.stop server))
 
-;; (def r {:status 200 :body (java.io.ByteArrayInputStream. (.getBytes "bar")) :headers {:foo [1 2] :bar ["bay"]}})
-;; (def r {})
-;; (def s (start! (fn [req] r) {:host "0.0.0.0" :port 8080 :default-socket {:write-queue-length 10240}}))
+;; (def r {:status 200})
+;; ;; (def h (fn [req]
+;; ;;          (prn (counted? (:headers req)))
+;; ;;          r))
+;; ;; (def h (fn [_]
+;; ;;          ;; (prn :aasdf ((:headers _) "accept"))
+;; ;;          ;; (prn (:headers _))
+;; ;;          r))
+;; (def s (start!
+;;         r
+;;         {:host "0.0.0.0" :port 8080 :default-socket {:write-queue-length 10240}}))
 
 ;; (stop! s)
 
