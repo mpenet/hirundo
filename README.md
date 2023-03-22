@@ -10,17 +10,17 @@
 
 
 ```clojure
-(require 's-exp.mina)
+(require '[s-exp.mina.http :as http])
 
 (def server
-  (mina/start! (fn [{:as request :keys [body headers ...]}]
+  (http/start! (fn [{:as request :keys [body headers ...]}]
                   {:status 200
                    :body "Hello world"
                    :headers {"Something" "Interesting"}})
                {:port 8080}))
 ;; ...
 
-(mina/stop! server)
+(http/stop! server)
 ```
 
 ## Supported options
@@ -53,6 +53,12 @@ https://clojars.org/com.s-exp/mina
 ```
 clj -X:test s-exp.mina-test-runner/run
 ```
+
+## Implemented
+
+- [x] HTTP (1.1 & 2) server
+- [ ] Grpc server
+- [ ] websocket server
 
 ## License
 
