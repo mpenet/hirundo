@@ -14,7 +14,7 @@
          (.any ^HttpRouting$Builder route
                (reify Handler
                  (handle [_ server-request server-response]
-                   (->> (request/->RingRequest server-request server-response)
+                   (->> (request/ring-request server-request server-response)
                         handler
                         (response/set-response! server-response))))))))))
 
