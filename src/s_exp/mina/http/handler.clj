@@ -1,7 +1,7 @@
-(ns s-exp.mina.handler
-  (:require [s-exp.mina.options :as options]
-            [s-exp.mina.request :as request]
-            [s-exp.mina.response :as response])
+(ns s-exp.mina.http.handler
+  (:require [s-exp.mina.http.options :as options]
+            [s-exp.mina.http.request :as request]
+            [s-exp.mina.http.response :as response])
   (:import (io.helidon.nima.webserver WebServer$Builder)
            (io.helidon.nima.webserver.http Handler Handler HttpRouting$Builder)))
 

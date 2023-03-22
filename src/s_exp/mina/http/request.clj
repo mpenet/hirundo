@@ -1,4 +1,4 @@
-(ns s-exp.mina.request
+(ns s-exp.mina.http.request
   (:require [clojure.string :as str]
             [strojure.zmap.core :as zmap])
   (:import (clojure.lang IEditableCollection IFn IKVReduce

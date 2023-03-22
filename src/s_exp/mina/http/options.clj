@@ -1,4 +1,4 @@
-(ns s-exp.mina.options
+(ns s-exp.mina.http.options
   (:import (io.helidon.common.socket SocketOptions$Builder)
            (io.helidon.nima.webserver ListenerConfiguration$Builder WebServer$Builder)
            (java.time Duration)))

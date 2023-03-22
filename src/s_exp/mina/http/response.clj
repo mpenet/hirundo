@@ -1,5 +1,5 @@
-(ns s-exp.mina.response
-  (:require [s-exp.mina.utils :as u])
+(ns s-exp.mina.http.response
+  (:require [s-exp.mina.http.utils :as u])
   (:import (io.helidon.common.http HeaderEnum Http$Header Http$Status)
            (io.helidon.nima.webserver.http ServerResponse)
            (java.io FileInputStream InputStream OutputStream)))
