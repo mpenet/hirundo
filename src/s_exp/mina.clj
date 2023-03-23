@@ -1,6 +1,6 @@
-(ns s-exp.mina.http
-  (:require [s-exp.mina.http.handler]
-            [s-exp.mina.http.options :as options])
+(ns s-exp.mina
+  (:require [s-exp.mina.handler]
+            [s-exp.mina.options :as options])
   (:import (io.helidon.nima.webserver WebServer WebServer$Builder)))
 
 (set! *warn-on-reflection* true)
