@@ -1,4 +1,4 @@
-(ns s-exp.mina.http.utils
+(ns s-exp.mina.utils
   (:require [clojure.string :as str]))
 
 (defn camel->dashed
