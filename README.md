@@ -10,17 +10,17 @@
 
 
 ```clojure
-(require '[s-exp.mina.http :as http])
+(require '[s-exp.mina :as mina])
 
 (def server
-  (http/start! (fn [{:as request :keys [body headers ...]}]
+  (mina/start! (fn [{:as request :keys [body headers ...]}]
                   {:status 200
                    :body "Hello world"
                    :headers {"Something" "Interesting"}})
                {:port 8080}))
 ;; ...
 
-(http/stop! server)
+(mina/stop! server)
 ```
 
 ## Supported options
