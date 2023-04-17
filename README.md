@@ -43,7 +43,7 @@ it will do the protocol switch automatically.
 
 ## Installation
 
-Note: You need to use java19 and add `:jvm-opts ["--enable-preview"]` to the
+Note: You need to use java20 and add `:jvm-opts ["--enable-preview"]` to the
 alias you will use to be able to run it.
 
 https://clojars.org/com.s-exp/mina
