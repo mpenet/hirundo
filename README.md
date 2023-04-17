@@ -8,6 +8,7 @@
 
 [Helidon/Nima](https://helidon.io/nima) is alpha status right now, so do not use this in prod please. 
 
+## Usage
 
 ```clojure
 (require '[s-exp.mina :as mina])
@@ -21,7 +22,12 @@
 ;; ...
 
 (mina/stop! server)
+
 ```
+
+There is nothing special to its API, you use mina as you would use any blocking
+http adapter like jetty; it is RING compliant so compatible with most/all
+middlewares out there.
 
 ## Supported options
 
