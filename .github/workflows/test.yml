@@ -13,7 +13,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: '19'
+          java-version: '20'
 
       - name: Install clojure tools
         uses: DeLaGuardo/setup-clojure@10.0
