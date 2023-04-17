@@ -56,12 +56,11 @@ clj -X:test s-exp.mina-test-runner/run
 
 ## Implemented
 
-- [x] HTTP (1.1 & 2) server
-- [ ] Grpc server
-- [ ] websocket server
+- [x] HTTP (1.1 & 2) server/handlers
+- [ ] Grpc handlers
 
 ## License
 
-Copyright © 2022 Max Penet
+Copyright © 2023 Max Penet
 
 Distributed under the Eclipse Public License version 1.
