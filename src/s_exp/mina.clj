@@ -42,14 +42,16 @@
 ;; (def r {:status 200})
 ;; (def h (fn [req]
 ;;          (prn (counted? (:headers req)))
-;;          r))
+         ;; r))
 ;; (def h (fn [_]
 ;;          ;; (prn :aasdf ((:headers _) "accept"))
 ;;          ;; (prn (:headers _))
 ;;          r))
 ;; (def s (start!
 ;;         r
-;;         {:host "0.0.0.0" :port 8080 :default-socket {:write-queue-length 10240}}))
+;;         {:host "0.0.0.0" :port 8080
+;;          :write-queue-length 10240
+;;          :connection-options {:socket-send-buffer-size 1024}}))
 
 ;; (stop! s)
 

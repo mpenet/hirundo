@@ -1,11 +1,11 @@
 (ns s-exp.mina.options
   (:import (io.helidon.common.socket SocketOptions$Builder)
-           (io.helidon.common.tls TlsConfig)
-           (io.helidon.webserver ListenerConfig$Builder
-                                 WebServerConfig$Builder)
+           (io.helidon.common.tls Tls)
+           (io.helidon.webserver WebServerConfig$Builder)
            (java.time Duration)))
 
 (set! *warn-on-reflection* true)
+
 (defmulti set-server-option! (fn [_builder k _v _options] k))
 
 (defmethod set-server-option! :default [builder _ _ _]
@@ -18,10 +18,6 @@
 (defmethod set-server-option! :port
   [^WebServerConfig$Builder builder _ port _]
   (.port builder (int port)))
-
-(defmethod set-server-option! :backlog
-  [^WebServerConfig$Builder builder _ backlog _]
-  (.backlog builder (int backlog)))
 
 (defmethod set-server-option! :backlog
   [^WebServerConfig$Builder builder _ backlog _]
@@ -75,11 +71,12 @@
   (.connectionOptions builder
                       (reify java.util.function.Consumer
                         (accept [_ socket-options-builder]
+                          (prn :sob socket-options-builder)
                           (set-connection-options! socket-options-builder
                                                    connection-options)))))
 
 (defmethod set-server-option! :tls
-  [^WebServerConfig$Builder builder _ ^TlsConfig tls-config _]
-  (doto builder (.tls tls-config)))
+  [^WebServerConfig$Builder builder _ tls-config _]
+  (doto builder (.tls ^Tls tls-config)))
 
 

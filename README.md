@@ -35,7 +35,17 @@ middlewares out there.
 
 * `:port` - port the server listens to, defaults to random free port
 
-* `:default-socket` - map-of `:write-queue-length` `:backlog` `:max-payload-size` `:receive-buffer-size` `:connection-options`(map-of `:socket-receive-buffer-size` `:socket-send-buffer-size` `:socket-reuse-address` `:socket-keep-alive` `:tcp-no-delay` `:read-timeout` `:connect-timeout`)
+* `:write-queue-length` 
+
+* `:backlog` 
+
+* `:max-payload-size` 
+
+* `:write-queue-length`
+
+* `:receive-buffer-size` 
+
+* `:connection-options`(map-of `:socket-receive-buffer-size` `:socket-send-buffer-size` `:socket-reuse-address` `:socket-keep-alive` `:tcp-no-delay` `:read-timeout` `:connect-timeout`)
 
 * `:tls` - A `io.helidon.nima.common.tls.Tls` instance
 
@@ -49,8 +59,7 @@ it will do the protocol switch automatically.
 
 ## Installation
 
-Note: You need to use java20 and add `:jvm-opts ["--enable-preview"]` to the
-alias you will use to be able to run it.
+Note: You need to use java **21**
 
 https://clojars.org/com.s-exp/mina
 
