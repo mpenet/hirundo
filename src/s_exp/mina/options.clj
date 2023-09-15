@@ -1,11 +1,9 @@
 (ns s-exp.mina.options
   (:import (io.helidon.common.socket SocketOptions$Builder)
-           (io.helidon.webserver ;; ListenerConfiguration$Builder
-            ServerListener
-            WebServerConfig$Builder)
+           (io.helidon.common.tls TlsConfig)
+           (io.helidon.webserver ListenerConfig$Builder
+                                 WebServerConfig$Builder)
            (java.time Duration)))
-
-;; (ServerListener/config)
 
 (set! *warn-on-reflection* true)
 (defmulti set-server-option! (fn [_builder k _v _options] k))
@@ -16,80 +14,72 @@
 (defmethod set-server-option! :host
   [^WebServerConfig$Builder builder _ host _]
   (.host builder host))
-;; io.helidon.webserver.WebServerConfig$BuilderBaseio.helidon.webserver.WebServerConfig$BuilderBase
+
 (defmethod set-server-option! :port
   [^WebServerConfig$Builder builder _ port _]
   (.port builder (int port)))
 
-#_(defn- set-connection-options!
-    [^SocketOptions$Builder socket-options-builder
-     {:keys [socket-receive-buffer-size socket-send-buffer-size
-             socket-reuse-address socket-keep-alive tcp-no-delay
-             read-timeout connect-timeout]}]
-    (when socket-receive-buffer-size
-      (.socketReceiveBufferSize socket-options-builder
-                                (int socket-receive-buffer-size)))
+(defmethod set-server-option! :backlog
+  [^WebServerConfig$Builder builder _ backlog _]
+  (.backlog builder (int backlog)))
 
-    (when socket-send-buffer-size
-      (.socketSendBufferSize socket-options-builder
-                             (int socket-send-buffer-size)))
+(defmethod set-server-option! :backlog
+  [^WebServerConfig$Builder builder _ backlog _]
+  (.backlog builder (int backlog)))
 
-    (when socket-reuse-address
-      (.socketReuseAddress socket-options-builder
-                           (boolean socket-reuse-address)))
+(defmethod set-server-option! :max-payload-size
+  [^WebServerConfig$Builder builder _ max-payload-size _]
+  (.maxPayloadSize builder (long max-payload-size)))
 
-    (when socket-keep-alive
-      (.socketKeepAlive socket-options-builder
-                        (boolean socket-keep-alive)))
-    (when tcp-no-delay
-      (.tcpNoDelay socket-options-builder
-                   (boolean tcp-no-delay)))
+(defmethod set-server-option! :write-queue-length
+  [^WebServerConfig$Builder builder _ write-queue-length _]
+  (.writeQueueLength builder (long write-queue-length)))
 
-    (when read-timeout
-      (.readTimeout socket-options-builder
-                    (Duration/ofMillis read-timeout)))
-    (when connect-timeout
-      (.connectTimeout socket-options-builder
-                       (Duration/ofMillis connect-timeout))))
+(defmethod set-server-option! :receive-buffer-size
+  [^WebServerConfig$Builder builder _ receive-buffer-size _]
+  (.receiveBufferSize builder (int receive-buffer-size)))
 
-#_(defn- set-listener-configuration!
-    [^ListenerConfiguration$Builder listener-configuration-builder
-     {:keys [write-queue-length backlog max-payload-size receive-buffer-size
-             connection-options]}]
-    (when backlog
-      (.backlog listener-configuration-builder
-                (int backlog)))
+(defn- set-connection-options!
+  [^SocketOptions$Builder socket-options-builder
+   {:keys [socket-receive-buffer-size socket-send-buffer-size
+           socket-reuse-address socket-keep-alive tcp-no-delay
+           read-timeout connect-timeout]}]
+  (when socket-receive-buffer-size
+    (.socketReceiveBufferSize socket-options-builder
+                              (int socket-receive-buffer-size)))
 
-    (when max-payload-size
-      (.maxPayloadSize listener-configuration-builder
-                       (long max-payload-size)))
+  (when socket-send-buffer-size
+    (.socketSendBufferSize socket-options-builder
+                           (int socket-send-buffer-size)))
 
-    (when write-queue-length
-      (.writeQueueLength listener-configuration-builder
-                         (int write-queue-length)))
+  (when socket-reuse-address
+    (.socketReuseAddress socket-options-builder
+                         (boolean socket-reuse-address)))
 
-    (when receive-buffer-size
-      (.receiveBufferSize listener-configuration-builder
-                          (int receive-buffer-size)))
+  (when socket-keep-alive
+    (.socketKeepAlive socket-options-builder
+                      (boolean socket-keep-alive)))
+  (when tcp-no-delay
+    (.tcpNoDelay socket-options-builder
+                 (boolean tcp-no-delay)))
 
-    #_(when (seq connection-options)
-        (.connectionOptions listener-configuration-builder
-                            (reify java.util.function.Consumer
-                              (accept [_ socket-options-builder]
-                                (set-connection-options! socket-options-builder
-                                                         connection-options))))))
+  (when read-timeout
+    (.readTimeout socket-options-builder
+                  (Duration/ofMillis read-timeout)))
+  (when connect-timeout
+    (.connectTimeout socket-options-builder
+                     (Duration/ofMillis connect-timeout))))
 
-#_(defmethod set-server-option! :default-socket
-    [^WebServerConfig$Builder builder _ default-socket _]
-    (doto builder
-      (.defaultSocket
-       (reify java.util.function.Consumer
-         (accept [_ listener-configuration-builder]
-           (set-listener-configuration! listener-configuration-builder
-                                        default-socket))))))
+(defmethod set-server-option! :connection-options
+  [^WebServerConfig$Builder builder _ connection-options _]
+  (.connectionOptions builder
+                      (reify java.util.function.Consumer
+                        (accept [_ socket-options-builder]
+                          (set-connection-options! socket-options-builder
+                                                   connection-options)))))
 
 (defmethod set-server-option! :tls
-  [^WebServerConfig$Builder builder _ tls _]
-  (doto builder (.tls tls)))
+  [^WebServerConfig$Builder builder _ ^TlsConfig tls-config _]
+  (doto builder (.tls tls-config)))
 
 
