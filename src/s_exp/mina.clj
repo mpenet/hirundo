@@ -52,7 +52,7 @@
 ;;          :write-queue-length 10240
 ;;          :connection-options {:socket-send-buffer-size 1024}}))
 
-(stop! s)
+;; (stop! s)
 
 ;; https://api.github.com/repos/mpenet/mina/commits/main?per_page=1
 
