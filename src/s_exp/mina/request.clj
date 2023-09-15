@@ -10,37 +10,39 @@
             MapEquivalence
             PersistentHashMap
             Util)
-           (io.helidon.common.http
+           (io.helidon.http
+            Headers
             Http$Header
             Http$HeaderName
-            Http$HeaderValue
+            Http$HeaderNames
             ServerRequestHeaders)
-           (io.helidon.nima.webserver.http ServerRequest ServerResponse)
+           (io.helidon.webserver.http ServerRequest ServerResponse)
            (java.util Map)))
 
 (defn header-name ^Http$HeaderName
   [s]
-  (Http$Header/createFromLowercase s))
+  (Http$HeaderNames/createFromLowercase s))
 
 (defn header->value*
-  ([^Http$Header header header-name]
+  ([^Headers header header-name]
    (header->value* header header-name nil))
-  ([^Http$Header header header-name not-found]
+  ([^Headers header
+    ^Http$HeaderName header-name not-found]
    (-> header
        (.value header-name)
        (.orElse not-found))))
 
 (defn header->value
-  ([^Http$Header h k]
+  ([^Headers h k]
    (header->value h k nil))
-  ([^Http$Header h k not-found]
+  ([^Headers h k not-found]
    (header->value* h
                    (header-name k)
                    not-found)))
 
 (defn ring-headers*
-  [^ServerRequestHeaders headers]
-  (-> (reduce (fn [m ^Http$HeaderValue h]
+  [^Headers headers]
+  (-> (reduce (fn [m ^Http$Header h]
                 (assoc! m
                         (.lowerCase (.headerName h))
                         (.value h)))
@@ -49,7 +51,7 @@
       persistent!))
 
 (defprotocol RingHeaders
-  (ring-headers [_]))
+  (^clojure.lang.APersistentMap ring-headers [_]))
 
 (defn ring-method
   [^ServerRequest server-request]
@@ -80,7 +82,7 @@
     "2.0" "HTTP/2"))
 
 ;; inspired by ring-undertow
-(deftype HeaderMapProxy [^ServerRequestHeaders headers
+(deftype HeaderMapProxy [^Headers headers
                          ^:volatile-mutable persistent-copy]
   Map
   (size [_]
@@ -144,11 +146,10 @@
 
   (iterator [_]
     (->> headers
-         (eduction (map (fn [header]
+         .iterator
+         (eduction (map (fn [^Http$Header header]
                           (MapEntry. (.lowerCase (.headerName header))
-                                     (.value header)))))
-
-         .iterator))
+                                     (.value header)))))))
 
   IKVReduce
   (kvreduce [this f init]

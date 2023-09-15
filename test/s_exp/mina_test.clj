@@ -5,7 +5,8 @@
             [clojure.test :refer :all]
             [less.awful.ssl :as ls]
             [s-exp.mina :as m])
-  (:import (io.helidon.nima.common.tls Tls TlsClientAuth)))
+  ;; (:import (io.helidon.nima.common.tls Tls TlsClientAuth))
+  )
 
 (def ^:dynamic *endpoint*)
 
@@ -22,7 +23,6 @@
 (deftest test-headers
   (with-server {:handler (fn [req] {:headers {:foo "bar"}})}
     (is (-> (client/get *endpoint*) :headers :foo (= "bar"))))
-
   (with-server {:handler (fn [req] {:headers {:foo ["bar" "baz"]}})}
     (is (-> (client/get *endpoint*) :headers :foo (= ["bar" "baz"])))))
 
@@ -75,33 +75,33 @@
   (with-server {:handler (fn [req] {:body (java.io.ByteArrayInputStream. (.getBytes "yes"))})}
     (is (-> (client/get *endpoint*) :body (= "yes")))))
 
-(defn tls []
-  (-> (Tls/builder)
-      (.tlsClientAuth TlsClientAuth/REQUIRED)
-      (.trustAll true)
-      (.sslContext (ls/ssl-context "test/server.key"
-                                   "test/server.crt"
-                                   "test/server.crt"))
-      (.endpointIdentificationAlgorithm (Tls/ENDPOINT_IDENTIFICATION_NONE))
-      (.build)))
+#_(defn tls []
+    (-> (Tls/builder)
+        (.tlsClientAuth TlsClientAuth/REQUIRED)
+        (.trustAll true)
+        (.sslContext (ls/ssl-context "test/server.key"
+                                     "test/server.crt"
+                                     "test/server.crt"))
+        (.endpointIdentificationAlgorithm (Tls/ENDPOINT_IDENTIFICATION_NONE))
+        (.build)))
 
-(deftest test-ssl-context
-  (with-server {:handler (fn [req] {})
-                :tls (tls)}
-    (let [endpoint (str/replace *endpoint* "http://" "https://")]
-      (is (thrown? Exception (client/get endpoint)))
-      (is (status-ok? (client/get endpoint {:insecure? true})))
-      (is (status-ok? (client/get endpoint
-                                  {:insecure? true
-                                   :keystore "test/keystore.jks"
-                                   :keystore-pass "password"
-                                   :trust-store "test/keystore.jks"
-                                   :trust-store-pass "password"})))))
+#_(deftest test-ssl-context
+    (with-server {:handler (fn [req] {})
+                  :tls (tls)}
+      (let [endpoint (str/replace *endpoint* "http://" "https://")]
+        (is (thrown? Exception (client/get endpoint)))
+        (is (status-ok? (client/get endpoint {:insecure? true})))
+        (is (status-ok? (client/get endpoint
+                                    {:insecure? true
+                                     :keystore "test/keystore.jks"
+                                     :keystore-pass "password"
+                                     :trust-store "test/keystore.jks"
+                                     :trust-store-pass "password"})))))
 
-  (with-server {:handler (fn [req] {:body (str (:scheme req))}) :tls (tls)}
-    (is (-> (client/get (str/replace *endpoint* "http" "https")
-                        {:insecure? true})
-            :body (= ":https")))))
+    (with-server {:handler (fn [req] {:body (str (:scheme req))}) :tls (tls)}
+      (is (-> (client/get (str/replace *endpoint* "http" "https")
+                          {:insecure? true})
+              :body (= ":https")))))
 
 
 

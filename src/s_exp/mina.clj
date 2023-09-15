@@ -1,19 +1,31 @@
 (ns s-exp.mina
   (:require [s-exp.mina.handler]
             [s-exp.mina.options :as options])
-  (:import (io.helidon.nima.webserver WebServer WebServer$Builder)))
+  (:import (io.helidon.webserver WebServer WebServerConfig WebServerConfig$Builder)))
 
 (set! *warn-on-reflection* true)
 
 (def default-options {:connection-provider false})
 
 (defn- server-builder
-  ^WebServer$Builder
+  ^WebServerConfig$Builder
   [options]
   (reduce (fn [builder [k v]]
             (options/set-server-option! builder k v options))
-          (WebServer/builder)
+          (WebServerConfig/builder)
           options))
+
+;; (clojure.reflect/reflect (WebServerConfig/builder))
+
+;; (import 'io.helidon.config.Config)
+
+;; (clojure.reflect/reflect (io.helidon.config.Config/builder))
+
+;; (let [c (io.helidon.config.Config/create)
+;;       b (WebServerConfig/builder)
+;;       p (.buildPrototype (.config b (.get c "server")))]
+;;   (clojure.reflect/reflect p)
+;;   (.writeQueueLength p))
 
 (defn start!
   "Starts a new server.
@@ -31,6 +43,7 @@
    (start! (assoc options :handler handler)))
   ([options]
    (-> (server-builder (merge default-options options))
+       .build
        (.start))))
 
 (defn stop!
