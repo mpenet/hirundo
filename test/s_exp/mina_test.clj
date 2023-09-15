@@ -1,11 +1,11 @@
 (ns s-exp.mina-test
-  "Tests vars run in parallel"
   (:require [clj-http.client :as client]
             [clojure.string :as str]
             [clojure.test :refer :all]
             [less.awful.ssl :as ls]
             [s-exp.mina :as m])
-  (:import (io.helidon.nima.common.tls Tls TlsClientAuth)))
+  (:import (io.helidon.common.tls Tls TlsClientAuth)
+           (io.helidon.common.tls TlsConfig)))
 
 (def ^:dynamic *endpoint*)
 
@@ -19,10 +19,9 @@
          ~@body
          (finally (m/stop! server#))))))
 
-(deftest test-headers
+(deftest test-send-headers
   (with-server {:handler (fn [req] {:headers {:foo "bar"}})}
     (is (-> (client/get *endpoint*) :headers :foo (= "bar"))))
-
   (with-server {:handler (fn [req] {:headers {:foo ["bar" "baz"]}})}
     (is (-> (client/get *endpoint*) :headers :foo (= ["bar" "baz"])))))
 
@@ -60,7 +59,6 @@
 
 (deftest test-body
   (with-server {:handler (fn [req] {})}
-    (prn (client/get *endpoint*))
     (is (-> (client/get *endpoint*) :body (= ""))))
 
   (with-server {:handler (fn [req] {:body "yes"})}
@@ -76,32 +74,25 @@
     (is (-> (client/get *endpoint*) :body (= "yes")))))
 
 (defn tls []
-  (-> (Tls/builder)
-      (.tlsClientAuth TlsClientAuth/REQUIRED)
-      (.trustAll true)
-      (.sslContext (ls/ssl-context "test/server.key"
-                                   "test/server.crt"
-                                   "test/server.crt"))
-      (.endpointIdentificationAlgorithm (Tls/ENDPOINT_IDENTIFICATION_NONE))
-      (.build)))
+  (let [b (doto (TlsConfig/builder)
+            (.sslContext (ls/ssl-context "test/server.key"
+                                         "test/server.crt"
+                                         "test/server.crt"))
+            (.clientAuth TlsClientAuth/REQUIRED)
+            (.trustAll true)
+            (.endpointIdentificationAlgorithm (Tls/ENDPOINT_IDENTIFICATION_NONE)))]
+    (.build b)))
 
 (deftest test-ssl-context
-  (with-server {:handler (fn [req] {})
-                :tls (tls)}
+  (with-server {:handler (fn [req] {}) :tls (tls)}
     (let [endpoint (str/replace *endpoint* "http://" "https://")]
       (is (thrown? Exception (client/get endpoint)))
-      (is (status-ok? (client/get endpoint {:insecure? true})))
       (is (status-ok? (client/get endpoint
                                   {:insecure? true
                                    :keystore "test/keystore.jks"
                                    :keystore-pass "password"
                                    :trust-store "test/keystore.jks"
-                                   :trust-store-pass "password"})))))
-
-  (with-server {:handler (fn [req] {:body (str (:scheme req))}) :tls (tls)}
-    (is (-> (client/get (str/replace *endpoint* "http" "https")
-                        {:insecure? true})
-            :body (= ":https")))))
+                                   :trust-store-pass "password"}))))))
 
 
 

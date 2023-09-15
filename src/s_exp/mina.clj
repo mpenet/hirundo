@@ -1,18 +1,18 @@
 (ns s-exp.mina
   (:require [s-exp.mina.handler]
             [s-exp.mina.options :as options])
-  (:import (io.helidon.nima.webserver WebServer WebServer$Builder)))
+  (:import (io.helidon.webserver WebServer WebServerConfig WebServerConfig$Builder)))
 
 (set! *warn-on-reflection* true)
 
 (def default-options {:connection-provider false})
 
 (defn- server-builder
-  ^WebServer$Builder
+  ^WebServerConfig$Builder
   [options]
   (reduce (fn [builder [k v]]
             (options/set-server-option! builder k v options))
-          (WebServer/builder)
+          (WebServerConfig/builder)
           options))
 
 (defn start!
@@ -31,6 +31,7 @@
    (start! (assoc options :handler handler)))
   ([options]
    (-> (server-builder (merge default-options options))
+       .build
        (.start))))
 
 (defn stop!
@@ -39,18 +40,19 @@
   (.stop server))
 
 ;; (def r {:status 200})
-;; ;; (def h (fn [req]
-;; ;;          (prn (counted? (:headers req)))
-;; ;;          r))
-;; ;; (def h (fn [_]
-;; ;;          ;; (prn :aasdf ((:headers _) "accept"))
-;; ;;          ;; (prn (:headers _))
-;; ;;          r))
+;; (def h (fn [req]
+;;          {:body (str (counted? (:headers req)))}))
+;; (def h (fn [_]
+;;          ;; (prn :aasdf ((:headers _) "accept"))
+;;          ;; (prn (:headers _))
+;;          r))
 ;; (def s (start!
-;;         r
-;;         {:host "0.0.0.0" :port 8080 :default-socket {:write-queue-length 10240}}))
+;;         #'h
+;;         {:host "0.0.0.0" :port 8080
+;;          :write-queue-length 10240
+;;          :connection-options {:socket-send-buffer-size 1024}}))
 
-;; (stop! s)
+(stop! s)
 
 ;; https://api.github.com/repos/mpenet/mina/commits/main?per_page=1
 

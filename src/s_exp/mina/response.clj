@@ -1,7 +1,9 @@
 (ns s-exp.mina.response
-  (:require [s-exp.mina.utils :as u])
-  (:import (io.helidon.common.http HeaderEnum Http$Header Http$Status)
-           (io.helidon.nima.webserver.http ServerResponse)
+  (:import (io.helidon.http Http$Headers
+                            Http$HeaderNames
+                            Http$HeaderName
+                            Http$Status)
+           (io.helidon.webserver.http ServerResponse)
            (java.io FileInputStream InputStream OutputStream)))
 
 (defprotocol BodyWriter
@@ -34,21 +36,16 @@
   (write-body! [o server-response]
     (.send ^ServerResponse server-response o)))
 
-(def header-name
-  (eval `(fn [ring-header-key#]
-           (case ring-header-key#
-             ~@(mapcat (fn [[k v]]
-                         [k (symbol "io.helidon.common.http.Http$Header" (.name v))])
-                       (u/enum->map HeaderEnum))
-             (Http$Header/create (name ring-header-key#))))))
+(defn header-name ^Http$HeaderName [ring-header-name]
+  (Http$HeaderNames/createFromLowercase (name ring-header-name)))
 
 (defn set-headers!
   [^ServerResponse server-response headers]
   (when headers
     (run! (fn [[k v]]
             (.header server-response
-                     (Http$Header/create (header-name k)
-                                         v)))
+                     (Http$Headers/create (header-name k)
+                                          v)))
           headers)))
 
 (defn- set-status!
