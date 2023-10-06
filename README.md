@@ -1,12 +1,11 @@
 # mīnā
 
-[![Clojars Project](https://img.shields.io/clojars/v/com.s-exp/mina.svg)](https://clojars.org/com.s-exp/mina)
+[![Clojars
+Project](https://img.shields.io/clojars/v/com.s-exp/mina.svg)](https://clojars.org/com.s-exp/mina)
 
-[Helidon/Nima](https://helidon.io/nima) [RING](https://github.com/ring-clojure/ring/blob/master/SPEC) compliant adapter for clojure, loom based 
-
-**Warning** It's early days so expect breakage.
-
-[Helidon/Nima](https://helidon.io/nima) is alpha status right now, so do not use this in prod please. 
+[Helidon/Nima](https://helidon.io/nima)
+[RING](https://github.com/ring-clojure/ring/blob/master/SPEC) compliant adapter
+for clojure, loom based
 
 ## Usage
 
