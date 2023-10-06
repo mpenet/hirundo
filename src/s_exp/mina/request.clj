@@ -12,22 +12,21 @@
             Util)
            (io.helidon.http
             Headers
-            Http$Header
-            Http$HeaderName
-            Http$HeaderNames
-            ServerRequestHeaders)
+            Header
+            HeaderName
+            HeaderNames)
            (io.helidon.webserver.http ServerRequest ServerResponse)
            (java.util Map)))
 
-(defn header-name ^Http$HeaderName
+(defn header-name ^HeaderName
   [s]
-  (Http$HeaderNames/createFromLowercase s))
+  (HeaderNames/createFromLowercase s))
 
 (defn header->value*
   ([^Headers header header-name]
    (header->value* header header-name nil))
   ([^Headers header
-    ^Http$HeaderName header-name not-found]
+    ^HeaderName header-name not-found]
    (-> header
        (.value header-name)
        (.orElse not-found))))
@@ -42,7 +41,7 @@
 
 (defn ring-headers*
   [^Headers headers]
-  (-> (reduce (fn [m ^Http$Header h]
+  (-> (reduce (fn [m ^Header h]
                 (assoc! m
                         (.lowerCase (.headerName h))
                         (.value h)))
@@ -147,7 +146,7 @@
   (iterator [_]
     (->> headers
          .iterator
-         (eduction (map (fn [^Http$Header header]
+         (eduction (map (fn [^Header header]
                           (MapEntry. (.lowerCase (.headerName header))
                                      (.value header)))))))
 
