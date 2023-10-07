@@ -71,6 +71,7 @@ clj -X:test s-exp.mina-test-runner/run
 ## Implemented
 
 - [x] HTTP (1.1 & 2) server/handlers
+- [ ] WebSocket handlers
 - [ ] Grpc handlers
 
 ## License
