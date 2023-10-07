@@ -6,6 +6,8 @@
            (io.helidon.webserver.http Handler
                                       HttpRouting)))
 
+(set! *warn-on-reflection* true)
+
 (defn set-ring1-handler! ^WebServerConfig$Builder
   [^WebServerConfig$Builder builder handler _options]
   (doto builder
@@ -13,6 +15,7 @@
      (.build
       (doto (HttpRouting/builder)
         (.any
+          ^"[Lio.helidon.webserver.http.Handler;"
          (into-array Handler
                      [(reify Handler
                         (handle [_ server-request server-response]
