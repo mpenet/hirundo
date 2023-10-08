@@ -1,4 +1,5 @@
 (ns s-exp.mina.response
+  (:require [ring.core.protocols :as p])
   (:import (io.helidon.http Header
                             Headers
                             HeaderNames
@@ -35,7 +36,9 @@
 
   Object
   (write-body! [o server-response]
-    (.send ^ServerResponse server-response o)))
+    (if (satisfies? p/StreamableResponseBody o)
+      (p/write-body-to-stream o nil (.outputStream server-response))
+      (.send ^ServerResponse server-response o))))
 
 (defn header-name ^HeaderName [ring-header-name]
   (HeaderNames/createFromLowercase (name ring-header-name)))
@@ -62,4 +65,3 @@
   (set-headers! server-response headers)
   (set-status! server-response status)
   (write-body! body server-response))
-
