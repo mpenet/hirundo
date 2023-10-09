@@ -1,5 +1,4 @@
 (ns s-exp.mina.response
-  (:require [ring.core.protocols :as p])
   (:import (io.helidon.http Header
                             Headers
                             HeaderNames
@@ -7,6 +6,12 @@
                             Status)
            (io.helidon.webserver.http ServerResponse)
            (java.io FileInputStream InputStream OutputStream)))
+
+(def ^:no-doc ring-core-loaded
+  (try
+    (require '[ring.core.protocols :as p])
+    true
+    (catch Throwable _ false)))
 
 (defprotocol BodyWriter
   (write-body! [x server-response]))
@@ -36,7 +41,7 @@
 
   Object
   (write-body! [o server-response]
-    (if (satisfies? p/StreamableResponseBody o)
+    (if (and ring-core-loaded (satisfies? p/StreamableResponseBody o))
       (p/write-body-to-stream o nil (.outputStream server-response))
       (.send ^ServerResponse server-response o))))
 
