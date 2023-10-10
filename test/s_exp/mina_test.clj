@@ -3,7 +3,9 @@
             [clojure.string :as str]
             [clojure.test :refer :all]
             [less.awful.ssl :as ls]
-            [s-exp.mina :as m])
+            [s-exp.mina :as m]
+            [ring.core.protocols :as p]
+            [clojure.java.io :as io])
   (:import (io.helidon.common.tls Tls TlsClientAuth)
            (io.helidon.common.tls TlsConfig)))
 
@@ -94,5 +96,19 @@
                                    :trust-store "test/keystore.jks"
                                    :trust-store-pass "password"}))))))
 
-
-
+(deftest test-streamable-body
+  (with-server {:handler (fn [_req]
+                           {:status 200
+                            :headers {"content-type" "text/event-stream"
+                                      "transfer-encoding" "chunked"}
+                            :body (reify p/StreamableResponseBody
+                                    (write-body-to-stream [_ _ output-stream]
+                                      (with-open [w (io/writer output-stream)]
+                                        (doseq [n (range 1 6)]
+                                          (doto w
+                                            (.write (str "data: " n "\n\n"))
+                                            (.flush))))))})}
+    (let [resp (client/get *endpoint*)]
+      (is (status-ok? resp))
+      (is (= "data: 1\n\ndata: 2\n\ndata: 3\n\ndata: 4\n\ndata: 5\n\n"
+             (:body resp))))))

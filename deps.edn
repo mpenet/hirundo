@@ -17,7 +17,8 @@
          :extra-deps {org.clojure/test.check {:mvn/version "1.1.1"}
                       less-awful-ssl/less-awful-ssl {:mvn/version "1.0.6"}
                       eftest/eftest {:mvn/version "0.6.0"}
-                      clj-http/clj-http {:mvn/version "3.12.0"}}}
+                      clj-http/clj-http {:mvn/version "3.12.0"}
+                      ring/ring-core {:mvn/version "1.10.0"}}}
   :project
   {:extra-deps {io.github.exoscale/tools.project {:git/sha "4ad527fac7bdc24f649404205ca31754339f856d"}}
    :ns-default exoscale.tools.project
