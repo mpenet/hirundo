@@ -9,7 +9,7 @@
 
 (def ^:no-doc ring-core-loaded
   (try
-    (require '[ring.core.protocols :as p])
+    (require 'ring.core.protocols)
     true
     (catch Throwable _ false)))
 
@@ -41,9 +41,17 @@
 
   Object
   (write-body! [o server-response]
-    (if (and ring-core-loaded (satisfies? p/StreamableResponseBody o))
-      (p/write-body-to-stream o nil (.outputStream server-response))
-      (.send ^ServerResponse server-response o))))
+    (.send ^ServerResponse server-response o)))
+
+(when ring-core-loaded
+  (extend-protocol BodyWriter
+    Object
+    (write-body! [o server-response]
+      (let [StreamableResponseBody @(ns-resolve 'ring.core.protocols 'StreamableResponseBody)
+            write-body-to-stream (ns-resolve 'ring.core.protocols 'write-body-to-stream)]
+        (if (satisfies? StreamableResponseBody o)
+          (write-body-to-stream o nil (.outputStream server-response))
+          (.send ^ServerResponse server-response o))))))
 
 (defn header-name ^HeaderName [ring-header-name]
   (HeaderNames/createFromLowercase (name ring-header-name)))
