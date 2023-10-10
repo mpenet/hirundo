@@ -1,6 +1,4 @@
-(ns s-exp.mina.request
-  (:require [clojure.string :as str]
-            [strojure.zmap.core :as zmap])
+(ns s-exp.mina.http.header
   (:import (clojure.lang
             IEditableCollection
             IFn
@@ -8,14 +6,13 @@
             IPersistentMap
             MapEntry
             MapEquivalence
-            PersistentHashMap
             Util)
            (io.helidon.http
             Headers
             Header
             HeaderName
-            HeaderNames)
-           (io.helidon.webserver.http ServerRequest ServerResponse)
+            HeaderNames
+            HeaderValues)
            (java.util Map)))
 
 (defn header-name ^HeaderName
@@ -39,6 +36,9 @@
                    (header-name k)
                    not-found)))
 
+(defn kv->header [^HeaderName header-name ^String v]
+  (HeaderValues/create header-name v))
+
 (defn ring-headers*
   [^Headers headers]
   (-> (reduce (fn [m ^Header h]
@@ -51,34 +51,6 @@
 
 (defprotocol RingHeaders
   (^clojure.lang.APersistentMap ring-headers [_]))
-
-(defn ring-method
-  [^ServerRequest server-request]
-  (let [method (-> server-request
-                   .prologue
-                   .method
-                   .text)]
-    ;; mess with the string as a last resort, try to match against static values
-    ;; first
-    (case method
-      "GET" :get
-      "POST" :post
-      "PUT" :put
-      "DELETE" :delete
-      "HEAD" :head
-      "OPTIONS" :options
-      "TRACE" :trace
-      "PATCH" :patch
-      (keyword (str/lower-case method)))))
-
-(defn ring-protocol
-  [^ServerRequest server-request]
-  (case (-> server-request
-            .prologue
-            .protocolVersion)
-    "1.0" "HTTP/1.0"
-    "1.1" "HTTP/1.1"
-    "2.0" "HTTP/2"))
 
 ;; inspired by ring-undertow
 (deftype HeaderMapProxy [^Headers headers
@@ -145,10 +117,10 @@
 
   (iterator [_]
     (->> headers
-         .iterator
          (eduction (map (fn [^Header header]
                           (MapEntry. (.lowerCase (.headerName header))
-                                     (.value header)))))))
+                                     (.value header)))))
+         .iterator))
 
   IKVReduce
   (kvreduce [this f init]
@@ -171,31 +143,4 @@
   (toString [_]
     (.toString headers)))
 
-(defn ring-request
-  [^ServerRequest server-request
-   ^ServerResponse server-response]
-  (let [qs (let [query (.rawValue (.query server-request))]
-             (when (not= "" query) query))
-        body (let [content (.content server-request)]
-               (when-not (.consumed content) (.inputStream content)))
-        ring-request (-> (.asTransient PersistentHashMap/EMPTY)
-                         ;; delayed
-                         (.assoc :server-port (zmap/delay (.port (.localPeer server-request))))
-                         (.assoc :server-name (zmap/delay (.host (.localPeer server-request))))
-                         (.assoc :remote-addr (zmap/delay
-                                                (let [address ^java.net.InetSocketAddress (.address (.remotePeer server-request))]
-                                                  (-> address .getAddress .getHostAddress))))
-                         (.assoc :ssl-client-cert (zmap/delay (some-> server-request .remotePeer .tlsCertificates (.orElse nil) first)))
-                         ;; realized
-                         (.assoc :uri (.rawPath (.path server-request)))
-                         (.assoc :scheme (if (.isSecure server-request) :https :http))
-                         (.assoc :protocol (ring-protocol server-request))
-                         (.assoc :request-method (ring-method server-request))
-                         (.assoc :headers (->HeaderMapProxy (.headers server-request) nil))
-                         (.assoc ::server-request server-request)
-                         (.assoc ::server-response server-response))
-        ;; optional
-        ring-request (cond-> ring-request
-                       qs (.assoc :query-string qs)
-                       body (.assoc :body body))]
-    (zmap/wrap (.persistent ring-request))))
+
