@@ -7,7 +7,7 @@
            (io.helidon.webserver.http ServerResponse)
            (java.io FileInputStream InputStream OutputStream)))
 
-(def ^:no-doc ring-core-loaded
+(def ^:no-doc ring-core-loaded?
   (try
     (require 'ring.core.protocols)
     true
@@ -43,7 +43,7 @@
   (write-body! [o server-response]
     (.send ^ServerResponse server-response o)))
 
-(when ring-core-loaded
+(when ring-core-loaded?
   (extend-protocol BodyWriter
     Object
     (write-body! [o server-response]
