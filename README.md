@@ -11,16 +11,36 @@ for clojure, loom based
 
 ```clojure
 (require '[s-exp.mina :as mina])
+(require '[s-exp.mina.websocket :as ws])
 
 (def server
-  (mina/start! (fn [{:as request :keys [body headers ...]}]
-                  {:status 200
-                   :body "Hello world"
-                   :headers {"Something" "Interesting"}})
-               {:port 8080}))
+  (mina/start! {;; regular ring handler
+                :http-handler (fn [{:as request :keys [body headers ...]}]
+                                {:status 200
+                                 :body "Hello world"
+                                 :headers {"Something" "Interesting"}})
+
+                ;; websocket endpoints
+                :websocket-endpoints {"/ws" {:message (fn [session data _last-msg]
+                                                        ;; echo back data
+                                                        (ws/send! session data true))
+                                             :open (fn [session] (prn :opening-session))
+                                             :close (fn [_session status reason]
+                                                      (prn :closed-session status reason))
+                                             :error (fn [session error]
+                                                      (prn :error error))
+                                             ;; :subprotocols ["chat"]
+                                             ;; :extensions ["foobar"]
+                                             ;; :http-upgrade (fn [headers] ...)
+                                             }}
+                :port 8080}))
 ;; ...
 
 (mina/stop! server)
+
+```
+
+```
 
 ```
 
@@ -33,6 +53,10 @@ middlewares out there.
 * `:host` - host of the default socket, defaults to 127.0.0.1
 
 * `:port` - port the server listens to, defaults to random free port
+
+* `:http-handler` - ring handler function
+
+* `:websocket-endpoints` - /!\ subject to changes - (map-of string-endpoint handler-fns-map), where handler if can be of `:message`, `:ping`, `:pong`, `:close`, `:error`, `:open`, `:http-upgrade`. `handler-fns-map` can also contain 2 extra keys, `:extensions`, `:subprotocols`, which are sets of subprotocols and protocol extensions acceptable by the server
 
 * `:write-queue-length` 
 
@@ -71,7 +95,7 @@ clj -X:test s-exp.mina-test-runner/run
 ## Implemented
 
 - [x] HTTP (1.1 & 2) server/handlers
-- [ ] WebSocket handlers
+- [x] WebSocket handlers (initial implementation)
 - [ ] Grpc handlers
 
 ## License

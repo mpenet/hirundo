@@ -1,7 +1,7 @@
-(ns s-exp.mina.handler
-  (:require [s-exp.mina.options :as options]
-            [s-exp.mina.request :as request]
-            [s-exp.mina.response :as response])
+(ns s-exp.mina.http.routing
+  (:require [s-exp.mina.http.request :as request]
+            [s-exp.mina.http.response :as response]
+            [s-exp.mina.options :as options])
   (:import (io.helidon.webserver WebServerConfig$Builder)
            (io.helidon.webserver.http Handler
                                       HttpRouting)))
@@ -15,7 +15,7 @@
      (.build
       (doto (HttpRouting/builder)
         (.any
-          ^"[Lio.helidon.webserver.http.Handler;"
+         ^"[Lio.helidon.webserver.http.Handler;"
          (into-array Handler
                      [(reify Handler
                         (handle [_ server-request server-response]
@@ -23,6 +23,6 @@
                                handler
                                (response/set-response! server-response))))])))))))
 
-(defmethod options/set-server-option! :handler
+(defmethod options/set-server-option! :http-handler
   [^WebServerConfig$Builder builder _ handler options]
   (set-ring1-handler! builder handler options))

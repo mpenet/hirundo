@@ -1,13 +1,11 @@
-(ns s-exp.mina.response
-  (:import (io.helidon.http Header
-                            Headers
-                            HeaderNames
+(ns s-exp.mina.http.response
+  (:import (io.helidon.http HeaderNames
                             HeaderName
                             Status)
            (io.helidon.webserver.http ServerResponse)
            (java.io FileInputStream InputStream OutputStream)))
 
-(def ^:no-doc ring-core-loaded?
+(def ring-core-available?
   (try
     (require 'ring.core.protocols)
     true
@@ -43,7 +41,7 @@
   (write-body! [o server-response]
     (.send ^ServerResponse server-response o)))
 
-(when ring-core-loaded?
+(when ring-core-available?
   (extend-protocol BodyWriter
     Object
     (write-body! [o server-response]
