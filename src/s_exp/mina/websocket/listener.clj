@@ -90,10 +90,10 @@
   (let [subprotocols (-> subprotocols not-empty set)
         extensions (-> extensions not-empty set)]
     (reify WsListener
-      (^void onMessage [_ ^WsSession session ^String data ^boolean last?]
-        (message session data last?))
-      (^void onMessage [_ ^WsSession session ^BufferData data ^boolean last?]
-        (message session data last?))
+      (^void onMessage [_ ^WsSession session ^String data ^boolean last]
+        (message session data last))
+      (^void onMessage [_ ^WsSession session ^BufferData data ^boolean last]
+        (message session data last))
       (^void onPing [_ ^WsSession session ^BufferData data]
         (ping session data))
       (^void onPong [_ ^WsSession session ^BufferData data]

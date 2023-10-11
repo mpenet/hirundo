@@ -24,7 +24,7 @@
 
   * `:http-handler` - ring http handler function
 
-  * `:websocket-endpoints` - websocket endpoints (map-of string-endpoint handler-fns-map), where handler if can be of `:message`, `:ping`, `:pong`, `:close`, `:error`, `:open`, `:http-upgrade`.
+  * `:websocket-endpoints` - websocket endpoints (map-of string-endpoint handler-fns-map), where handler if can be of `:message`, `:ping`, `:pong`, `:close`, `:error`, `:open`, `:http-upgrade`. `handler-fns-map` can also contain 2 extra keys, `:extensions`, `:subprotocols`, which are sets of exts/subprotos acceptable by the server.
   
   * `:host` - host of the default socket
   
@@ -83,8 +83,8 @@
 ;;                                  ;; (fn [p h]
 ;;                                  ;;   (prn :http-upgrade p h)
 ;;                                  ;;   (java.util.Optional/of h))
-;;                                   :message (fn [session data last?]
-;;                                              (prn :message data last?)
+;;                                   :message (fn [session data last]
+;;                                              (prn :message data last)
 ;;                                              (s-exp.mina.websocket/send! session data true))}}
 ;;            :write-queue-length 10240
 ;;            :connection-options {:socket-send-buffer-size 1024}})))
@@ -104,4 +104,3 @@
 ;; (ws/close socket)
 
 ;; https://api.github.com/repos/mpenet/mina/commits/main?per_page=1
-

@@ -128,7 +128,7 @@
 
 (deftest test-websocket
   (with-server {:websocket-endpoints {"/ws"
-                                      {:message (fn [session data last?]
+                                      {:message (fn [session data _last]
                                                   (s-exp.mina.websocket/send! session data true))}}}
     (let [client-recv (promise)]
       (with-ws-client {:on-receive (fn [msg] (deliver client-recv msg))}
@@ -146,7 +146,7 @@
 
   (with-server {:websocket-endpoints {"/ws"
                                       {:subprotocols ["chat"]
-                                       :message (fn [session data last?]
+                                       :message (fn [session data _last]
                                                   (s-exp.mina.websocket/send! session data true))}}}
     (let [client-recv (promise)]
       (with-ws-client {:subprotocols ["chat"]
