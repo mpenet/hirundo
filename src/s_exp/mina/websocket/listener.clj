@@ -1,11 +1,10 @@
 (ns s-exp.mina.websocket.listener
-  (:require [s-exp.mina.http.header :as h]
+  (:require [clojure.string :as str]
             [s-exp.mina.http.request :as r])
   (:import (io.helidon.common.buffers BufferData)
-           (io.helidon.http Headers HeaderNames HeaderName Header HeaderValues)
+           (io.helidon.http HeaderValues Headers)
            (io.helidon.http HttpPrologue)
            (io.helidon.http WritableHeaders)
-           (io.helidon.webserver.websocket WsUpgrader)
            (io.helidon.websocket WsListener WsSession WsUpgradeException)
            (java.util Optional)))
 
@@ -26,42 +25,45 @@
 ;; for exchanging WebSocket messages. From here on, there is no other explicit
 ;; HTTP communication between the client and server, and the WebSocket protocol
 ;; takes over.
+
+(defn- split-header-value
+  [header-value]
+  (->> (str/split header-value #",")
+       (map str/trim)))
+
 (defn- header-negotiate
-  [^HeaderName k allowed-values ^Headers headers response-headers]
+  [headers allowed-values header-name]
   (if (seq allowed-values)
     (if-let [selected-value (reduce (fn [_ x]
                                       (when (contains? allowed-values x)
                                         (reduced x)))
                                     nil
-                                    (.allValues (.get headers k)
-                                                true))]
-      (assoc response-headers (.defaultCase k) selected-value)
+                                    (some-> (get headers header-name)
+                                            split-header-value))]
+      (assoc headers header-name selected-value)
       (throw (WsUpgradeException. (format "Failed negotiation for %s"
-                                          (.defaultCase k)))))
-    response-headers))
+                                          header-name))))
+    headers))
 
 (defn negotiate-subprotocols!
-  [allowed-sub-protocols ^Headers headers response-headers]
-  (header-negotiate WsUpgrader/PROTOCOL
+  [headers allowed-sub-protocols]
+  (header-negotiate headers
                     allowed-sub-protocols
-                    ^Headers headers
-                    response-headers))
+                    "sec-websocket-protocol"))
 
 (defn negotiate-extensions!
-  [allowed-extensions ^Headers headers response-headers]
-  (header-negotiate WsUpgrader/EXTENSIONS
+  [headers allowed-extensions]
+  (header-negotiate headers
                     allowed-extensions
-                    ^Headers headers
-                    response-headers))
+                    "sec-websocket-extensions"))
 
 (defn http-upgrade-default
   [{:as ring-request
-    ::keys [^Headers headers
-            allowed-protocols
+    ::keys [allowed-subprotocols
             allowed-extensions]}]
-  (->> (:headers ring-request)
-       (negotiate-subprotocols! allowed-protocols headers)
-       (negotiate-extensions! allowed-extensions headers)))
+  (-> (:headers ring-request)
+      (negotiate-subprotocols! allowed-subprotocols)
+      (negotiate-extensions! allowed-extensions)))
 
 (defn headers-response [headers-map]
   (let [wh (WritableHeaders/create)]

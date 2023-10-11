@@ -3,13 +3,16 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.test :refer [deftest is]]
+            [gniazdo.core :as wsc]
             [less.awful.ssl :as ls]
             [ring.core.protocols :as p]
-            [s-exp.mina :as m])
+            [s-exp.mina :as m]
+            [s-exp.mina.websocket :as ws])
   (:import (io.helidon.common.tls Tls TlsClientAuth)
            (io.helidon.common.tls TlsConfig)))
 
 (def ^:dynamic *endpoint* nil)
+(def ^:dynamic *client* nil)
 
 (defn status-ok? [response]
   (some-> response :status (= 200)))
@@ -112,3 +115,52 @@
       (is (status-ok? resp))
       (is (= "data: 1\n\ndata: 2\n\ndata: 3\n\ndata: 4\n\ndata: 5\n\n"
              (:body resp))))))
+
+(defmacro with-ws-client
+  [options & body]
+  `(binding [*client* (wsc/connect (str (str/replace *endpoint* "http" "ws") "/ws")
+                                   ~@(into [] cat options))]
+
+     (try
+       ~@body
+       (finally
+         (wsc/close *client*)))))
+
+(deftest test-websocket
+  (with-server {:websocket-endpoints {"/ws"
+                                      {:message (fn [session data last?]
+                                                  (s-exp.mina.websocket/send! session data true))}}}
+    (let [client-recv (promise)]
+      (with-ws-client {:on-receive (fn [msg] (deliver client-recv msg))}
+        (wsc/send-msg *client* "bar")
+        (is (= "bar" @client-recv) "echo test"))))
+
+  (with-server {:websocket-endpoints {"/ws"
+                                      {:message (fn [session data _last]
+                                                  (s-exp.mina.websocket/send! session data false)
+                                                  (s-exp.mina.websocket/send! session data true))}}}
+    (let [client-recv (promise)]
+      (with-ws-client {:on-receive (fn [msg] (deliver client-recv msg))}
+        (wsc/send-msg *client* "bar")
+        (is (= "barbar" @client-recv) "double echo test"))))
+
+  (with-server {:websocket-endpoints {"/ws"
+                                      {:subprotocols ["chat"]
+                                       :message (fn [session data last?]
+                                                  (s-exp.mina.websocket/send! session data true))}}}
+    (let [client-recv (promise)]
+      (with-ws-client {:subprotocols ["chat"]
+                       :on-receive (fn [msg] (deliver client-recv msg))}
+        (wsc/send-msg *client* "bar")
+        (is (= "bar" @client-recv) "echo with correct subprotocols"))
+
+      (is (thrown-with-msg? Exception
+                            #"Not Found"
+                            (with-ws-client {}))
+          "Missing subprotocols")
+
+      (is (thrown-with-msg? Exception
+                            #"Not Found"
+                            (with-ws-client {:subprotocols ["foo"]}))
+          "Incorrect subprotocols"))))
+
