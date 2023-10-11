@@ -14,26 +14,26 @@ for clojure, loom based
 (require '[s-exp.mina.websocket :as ws])
 
 (def server
-  (mina/start! { ;; regular ring handler
-               :http-handler (fn [{:as request :keys [body headers ...]}]
-                               {:status 200
-                                :body "Hello world"
-                                :headers {"Something" "Interesting"}})
+  (mina/start! {;; regular ring handler
+                :http-handler (fn [{:as request :keys [body headers ...]}]
+                                {:status 200
+                                 :body "Hello world"
+                                 :headers {"Something" "Interesting"}})
 
-               ;; websocket endpoints
-               :websocket-endpoints {"/ws" {:message (fn [session data _last-msg]
-                                                       ;; echo back data
-                                                       (ws/send! session data true))
-                                            :open (fn [session] (prn :opening-session))
-                                            :close (fn [_session status reason]
-                                                     (prn :closed-session status reason))
-                                            :error (fn [session error]
-                                                     (prn :error error))
-                                            ;; :subprotocols ["chat"]
-                                            ;; :extensions ["foobar"]
-                                            ;; :http-upgrade (fn [headers] ...)
-                                            }}
-               :port 8080}))
+                ;; websocket endpoints
+                :websocket-endpoints {"/ws" {:message (fn [session data _last-msg]
+                                                        ;; echo back data
+                                                        (ws/send! session data true))
+                                             :open (fn [session] (prn :opening-session))
+                                             :close (fn [_session status reason]
+                                                      (prn :closed-session status reason))
+                                             :error (fn [session error]
+                                                      (prn :error error))
+                                             ;; :subprotocols ["chat"]
+                                             ;; :extensions ["foobar"]
+                                             ;; :http-upgrade (fn [headers] ...)
+                                             }}
+                :port 8080}))
 ;; ...
 
 (mina/stop! server)
