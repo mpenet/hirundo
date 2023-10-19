@@ -1,6 +1,13 @@
 {:exoscale.project/lib com.s-exp/hirundo
  :exoscale.project/version-file "VERSION"
  :exoscale.project/deploy? true
+ :exoscale.project/pom-data
+ [[:licenses
+   [:license
+    [:name "Eclipse Public License - v 2.0"]
+    [:url "https://www.eclipse.org/legal/epl-2.0/"]
+    [:distribution "repo"]]]]
+
  :slipset.deps-deploy/exec-args {:installer :remote
                                  :sign-releases? false
                                  :repository "clojars"}
@@ -23,6 +30,6 @@
                       clj-http/clj-http {:mvn/version "3.12.0"}}}
 
   :project
-  {:extra-deps {io.github.exoscale/tools.project {:git/sha "4ad527fac7bdc24f649404205ca31754339f856d"}}
+  {:extra-deps {io.github.exoscale/tools.project {:git/sha "ce87a95e95abfde832043aff5af7ecb06ad79fe7"}}
    :ns-default exoscale.tools.project
    :jvm-opts ["-Dclojure.main.report=stderr"]}}}
