@@ -1,4 +1,4 @@
-(ns s-exp.mina.utils
+(ns s-exp.hirundo.utils
   (:require [clojure.string :as str]))
 
 (defn camel->dashed

@@ -1,8 +1,8 @@
-(ns s-exp.mina
-  (:require [s-exp.mina.http.routing]
-            [s-exp.mina.options :as options]
-            [s-exp.mina.websocket]
-            [s-exp.mina.websocket.routing])
+(ns s-exp.hirundo
+  (:require [s-exp.hirundo.http.routing]
+            [s-exp.hirundo.options :as options]
+            [s-exp.hirundo.websocket]
+            [s-exp.hirundo.websocket.routing])
   (:import (io.helidon.webserver WebServer WebServerConfig WebServerConfig$Builder)))
 
 (set! *warn-on-reflection* true)

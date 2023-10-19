@@ -1,8 +1,8 @@
 (ns dev.playground
   (:require
    [gniazdo.core :as ws]
-   [s-exp.mina :as m]
-   [s-exp.mina.websocket :as mws]))
+   [s-exp.hirundo :as m]
+   [s-exp.hirundo.websocket :as mws]))
 
 (def r {:status 200})
 (def h (fn [req] r))

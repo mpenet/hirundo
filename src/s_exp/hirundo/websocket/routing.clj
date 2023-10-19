@@ -1,6 +1,6 @@
-(ns s-exp.mina.websocket.routing
-  (:require [s-exp.mina.options :as options]
-            [s-exp.mina.websocket.listener :as l])
+(ns s-exp.hirundo.websocket.routing
+  (:require [s-exp.hirundo.options :as options]
+            [s-exp.hirundo.websocket.listener :as l])
   (:import (io.helidon.webserver WebServerConfig$Builder)
            (io.helidon.webserver.websocket WsRouting WsRouting$Builder)))
 

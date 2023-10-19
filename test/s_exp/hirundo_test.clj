@@ -1,4 +1,4 @@
-(ns s-exp.mina-test
+(ns s-exp.hirundo-test
   (:require [clj-http.client :as client]
             [clojure.java.io :as io]
             [clojure.string :as str]
@@ -6,8 +6,8 @@
             [gniazdo.core :as wsc]
             [less.awful.ssl :as ls]
             [ring.core.protocols :as p]
-            [s-exp.mina :as m]
-            [s-exp.mina.websocket :as ws])
+            [s-exp.hirundo :as m]
+            [s-exp.hirundo.websocket :as ws])
   (:import (io.helidon.common.tls Tls TlsClientAuth)
            (io.helidon.common.tls TlsConfig)))
 
@@ -129,7 +129,7 @@
 (deftest test-websocket
   (with-server {:websocket-endpoints {"/ws"
                                       {:message (fn [session data _last]
-                                                  (s-exp.mina.websocket/send! session data true))}}}
+                                                  (s-exp.hirundo.websocket/send! session data true))}}}
     (let [client-recv (promise)]
       (with-ws-client {:on-receive (fn [msg] (deliver client-recv msg))}
         (wsc/send-msg *client* "bar")
@@ -137,8 +137,8 @@
 
   (with-server {:websocket-endpoints {"/ws"
                                       {:message (fn [session data _last]
-                                                  (s-exp.mina.websocket/send! session data false)
-                                                  (s-exp.mina.websocket/send! session data true))}}}
+                                                  (s-exp.hirundo.websocket/send! session data false)
+                                                  (s-exp.hirundo.websocket/send! session data true))}}}
     (let [client-recv (promise)]
       (with-ws-client {:on-receive (fn [msg] (deliver client-recv msg))}
         (wsc/send-msg *client* "bar")
@@ -147,7 +147,7 @@
   (with-server {:websocket-endpoints {"/ws"
                                       {:subprotocols ["chat"]
                                        :message (fn [session data _last]
-                                                  (s-exp.mina.websocket/send! session data true))}}}
+                                                  (s-exp.hirundo.websocket/send! session data true))}}}
     (let [client-recv (promise)]
       (with-ws-client {:subprotocols ["chat"]
                        :on-receive (fn [msg] (deliver client-recv msg))}

@@ -1,7 +1,7 @@
-(ns s-exp.mina.http.routing
-  (:require [s-exp.mina.http.request :as request]
-            [s-exp.mina.http.response :as response]
-            [s-exp.mina.options :as options])
+(ns s-exp.hirundo.http.routing
+  (:require [s-exp.hirundo.http.request :as request]
+            [s-exp.hirundo.http.response :as response]
+            [s-exp.hirundo.options :as options])
   (:import (io.helidon.webserver WebServerConfig$Builder)
            (io.helidon.webserver.http Handler
                                       HttpRouting)))

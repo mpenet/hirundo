@@ -1,7 +1,7 @@
-# mīnā
+# Hirundo
 
 [![Clojars
-Project](https://img.shields.io/clojars/v/com.s-exp/mina.svg)](https://clojars.org/com.s-exp/mina)
+Project](https://img.shields.io/clojars/v/com.s-exp/hirundo.svg)](https://clojars.org/com.s-exp/hirundo)
 
 [Helidon/Nima](https://helidon.io/nima)
 [RING](https://github.com/ring-clojure/ring/blob/master/SPEC) compliant adapter
@@ -10,11 +10,11 @@ for clojure, loom based
 ## Usage
 
 ```clojure
-(require '[s-exp.mina :as mina])
-(require '[s-exp.mina.websocket :as ws])
+(require '[s-exp.hirundo :as hirundo])
+(require '[s-exp.hirundo.websocket :as ws])
 
 (def server
-  (mina/start! {;; regular ring handler
+  (hirundo/start! {;; regular ring handler
                 :http-handler (fn [{:as request :keys [body headers ...]}]
                                 {:status 200
                                  :body "Hello world"
@@ -36,7 +36,7 @@ for clojure, loom based
                 :port 8080}))
 ;; ...
 
-(mina/stop! server)
+(hirundo/stop! server)
 
 ```
 
@@ -44,7 +44,7 @@ for clojure, loom based
 
 ```
 
-There is nothing special to its API, you use mina as you would use any blocking
+There is nothing special to its API, you use hirundo as you would use any blocking
 http adapter like jetty; it is RING compliant so compatible with most/all
 middlewares out there.
 
@@ -73,7 +73,7 @@ middlewares out there.
 * `:tls` - A `io.helidon.nima.common.tls.Tls` instance
 
 
-You can hook into the server builder via `s-exp.mina.options/set-server-option!`
+You can hook into the server builder via `s-exp.hirundo.options/set-server-option!`
 multimethod at runtime and add/modify whatever you want if you need anything
 extra we don't provide (yet).
 
@@ -84,12 +84,12 @@ it will do the protocol switch automatically.
 
 Note: You need to use java **21**
 
-https://clojars.org/com.s-exp/mina
+https://clojars.org/com.s-exp/hirundo
 
 ## Running the tests 
 
 ```
-clj -X:test s-exp.mina-test-runner/run
+clj -X:test s-exp.hirundo-test-runner/run
 ```
 
 ## Implemented

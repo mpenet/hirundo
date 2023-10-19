@@ -1,6 +1,6 @@
-(ns s-exp.mina.websocket.listener
+(ns s-exp.hirundo.websocket.listener
   (:require [clojure.string :as str]
-            [s-exp.mina.http.request :as r])
+            [s-exp.hirundo.http.request :as r])
   (:import (io.helidon.common.buffers BufferData)
            (io.helidon.http HeaderValues Headers)
            (io.helidon.http HttpPrologue)

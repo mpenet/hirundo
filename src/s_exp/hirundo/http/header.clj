@@ -1,4 +1,4 @@
-(ns s-exp.mina.http.header
+(ns s-exp.hirundo.http.header
   (:import (clojure.lang
             IEditableCollection
             IFn

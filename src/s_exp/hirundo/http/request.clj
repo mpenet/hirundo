@@ -1,6 +1,6 @@
-(ns s-exp.mina.http.request
+(ns s-exp.hirundo.http.request
   (:require [clojure.string :as str]
-            [s-exp.mina.http.header :as h]
+            [s-exp.hirundo.http.header :as h]
             [strojure.zmap.core :as zmap])
   (:import (clojure.lang PersistentHashMap)
            (io.helidon.common.uri UriQuery UriPath)

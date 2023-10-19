@@ -1,4 +1,4 @@
-(ns s-exp.mina-test-runner
+(ns s-exp.hirundo-test-runner
   (:gen-class)
   (:require [clojure.test]
             eftest.report.pretty

@@ -1,4 +1,4 @@
-(ns s-exp.mina.http.response
+(ns s-exp.hirundo.http.response
   (:import (io.helidon.http HeaderNames
                             HeaderName
                             Status)

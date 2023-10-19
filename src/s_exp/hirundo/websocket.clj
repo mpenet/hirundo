@@ -1,4 +1,4 @@
-(ns s-exp.mina.websocket
+(ns s-exp.hirundo.websocket
   (:import (io.helidon.common.buffers BufferData)
            (io.helidon.websocket WsSession)))
 
@@ -12,10 +12,6 @@
   (Class/forName "[B")
   (buffer-data [ba]
     (BufferData/create ^"[B" ba))
-
-  String
-  (buffer-data [s]
-    (BufferData/create s))
 
   clojure.lang.Sequential
   (buffer-data [s]
