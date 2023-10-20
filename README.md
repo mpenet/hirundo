@@ -1,7 +1,8 @@
-# Hirundo
+# Hirundo [![Clojars Project](https://img.shields.io/clojars/v/com.s-exp/hirundo.svg)](https://clojars.org/com.s-exp/hirundo)
 
-[![Clojars
-Project](https://img.shields.io/clojars/v/com.s-exp/hirundo.svg)](https://clojars.org/com.s-exp/hirundo)
+<img src="https://github.com/mpenet/hirundo/assets/106390/7fb900d8-c8cb-4211-9c40-1caa97c1c269" data-canonical-src="https://github.com/mpenet/hirundo/assets/106390/7fb900d8-c8cb-4211-9c40-1caa97c1c269" width="150" height="150" />
+
+
 
 [Helidon/Nima](https://helidon.io/nima)
 [RING](https://github.com/ring-clojure/ring/blob/master/SPEC) compliant adapter
