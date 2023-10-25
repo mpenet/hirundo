@@ -6,7 +6,7 @@
 
 (def default-options
   {:dir "test"
-   :capture-output? true
+   :capture-output? false
    :fail-fast? true
    :multithread? :vars
    :reporters [eftest.report.pretty/report]})
