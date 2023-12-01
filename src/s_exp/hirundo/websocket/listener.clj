@@ -33,17 +33,16 @@
 
 (defn- header-negotiate
   [headers allowed-values header-name]
-  (if (seq allowed-values)
+  (when (seq allowed-values)
     (if-let [selected-value (reduce (fn [_ x]
                                       (when (contains? allowed-values x)
                                         (reduced x)))
                                     nil
                                     (some-> (get headers header-name)
                                             split-header-value))]
-      (assoc headers header-name selected-value)
+      {header-name selected-value}
       (throw (WsUpgradeException. (format "Failed negotiation for %s"
-                                          header-name))))
-    headers))
+                                          header-name))))))
 
 (defn negotiate-subprotocols!
   [headers allowed-sub-protocols]
@@ -61,9 +60,10 @@
   [{:as ring-request
     ::keys [allowed-subprotocols
             allowed-extensions]}]
-  (-> (:headers ring-request)
-      (negotiate-subprotocols! allowed-subprotocols)
-      (negotiate-extensions! allowed-extensions)))
+  (merge (negotiate-subprotocols! (:headers ring-request)
+                                  allowed-subprotocols)
+         (negotiate-extensions! (:headers ring-request)
+                                allowed-extensions)))
 
 (defn headers-response [headers-map]
   (let [wh (WritableHeaders/create)]
@@ -116,5 +116,3 @@
            (if http-upgrade
              (http-upgrade ring-request)
              (http-upgrade-default ring-request))))))))
-
-
