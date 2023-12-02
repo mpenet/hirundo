@@ -41,9 +41,6 @@ for clojure, loom based
 
 ```
 
-```
-
-```
 
 There is nothing special to its API, you use hirundo as you would use any blocking
 http adapter like jetty; it is RING compliant so compatible with most/all
