@@ -87,7 +87,7 @@ https://clojars.org/com.s-exp/hirundo
 ## Running the tests 
 
 ```
-clj -X:test s-exp.hirundo-test-runner/run
+clj -X:test
 ```
 
 ## Implemented
