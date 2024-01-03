@@ -34,6 +34,14 @@
   (with-server {:http-handler (fn [req] {:status 201})}
     (is (-> (client/get *endpoint*) :status (= 201)))))
 
+(deftest test-headers
+  (with-server {:http-handler (fn [req]
+                                {:body (str (count (:headers req)))})}
+    (is (-> (client/get *endpoint*) :body (= "4"))))
+  (with-server {:http-handler (fn [req]
+                                {:body (str (:headers req))})}
+    (is (-> (client/get *endpoint*) :status (= 200)))))
+
 (deftest test-query-string
   (with-server {:http-handler (fn [req] {:body (:query-string req)})}
     (is (-> (client/get (str *endpoint* "?foo=bar")) :body (= "foo=bar"))))
@@ -78,6 +86,11 @@
   (with-server {:http-handler (fn [req] {:body (java.io.ByteArrayInputStream. (.getBytes "yes"))})}
     (is (-> (client/get *endpoint*) :body (= "yes")))))
 
+(deftest resp-map-decoding
+  (with-server {:http-handler (fn [req]
+                                {:body (str (select-keys req [:something]))})}
+    (is (status-ok? (client/get (str *endpoint* ""))))))
+
 (defn tls []
   (let [b (doto (TlsConfig/builder)
             (.sslContext (ls/ssl-context "test/server.key"
@@ -119,7 +132,7 @@
 (defmacro with-ws-client
   [options & body]
   `(binding [*client* (wsc/connect (str (str/replace *endpoint* "http" "ws") "/ws")
-                                   ~@(into [] cat options))]
+                        ~@(into [] cat options))]
 
      (try
        ~@body
@@ -163,4 +176,3 @@
                             #"Not Found"
                             (with-ws-client {:subprotocols ["foo"]}))
           "Incorrect subprotocols"))))
-
