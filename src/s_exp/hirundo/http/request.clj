@@ -5,6 +5,8 @@
            (io.helidon.http HttpPrologue Headers Header)
            (io.helidon.webserver.http ServerRequest ServerResponse)))
 
+(set! *warn-on-reflection* true)
+
 (defn ring-headers
   [^Headers headers]
   (-> (reduce (fn [m ^Header h]
@@ -49,21 +51,23 @@
   (let [qs (ring-query (.query server-request))
         body (let [content (.content server-request)]
                (when-not (.consumed content) (.inputStream content)))
-        ring-request (-> (.asTransient PersistentHashMap/EMPTY)
-                         (.assoc :server-port (.port (.localPeer server-request)))
-                         (.assoc :server-name (.host (.localPeer server-request)))
-                         (.assoc :remote-addr (let [address ^java.net.InetSocketAddress (.address (.remotePeer server-request))]
-                                                (-> address .getAddress .getHostAddress)))
-                         (.assoc :ssl-client-cert (some-> server-request .remotePeer .tlsCertificates (.orElse nil) first))
-                         (.assoc :uri (ring-path (.path server-request)))
-                         (.assoc :scheme (if (.isSecure server-request) :https :http))
-                         (.assoc :protocol (ring-protocol (.prologue server-request)))
-                         (.assoc :request-method (ring-method (.prologue server-request)))
-                         (.assoc :headers (ring-headers (.headers server-request)))
-                         (.assoc ::server-request server-request)
-                         (.assoc ::server-response server-response))
-        ;; optional
+
+        ring-request (transient
+                      {:server-port (.port (.localPeer server-request))
+                       :server-name (.host (.localPeer server-request))
+                       :remote-addr (let [address ^java.net.InetSocketAddress (.address (.remotePeer server-request))]
+                                      (-> address .getAddress .getHostAddress))
+                       :ssl-client-cert (some-> server-request .remotePeer .tlsCertificates (.orElse nil) first)
+                       :uri (ring-path (.path server-request))
+                       :scheme (if (.isSecure server-request) :https :http)
+                       :protocol (ring-protocol (.prologue server-request))
+                       :request-method (ring-method (.prologue server-request))
+                       :headers (ring-headers (.headers server-request))
+                       ::server-request server-request
+                       ::server-response server-response})
+
         ring-request (cond-> ring-request
-                       qs (.assoc :query-string (ring-query (.query server-request)))
-                       body (.assoc :body body))]
-    (.persistent ring-request)))
+                       qs (assoc! :query-string (ring-query (.query server-request)))
+                       body (assoc! :body body))]
+
+    (persistent! ring-request)))

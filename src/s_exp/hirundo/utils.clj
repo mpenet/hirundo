@@ -1,6 +1,8 @@
 (ns s-exp.hirundo.utils
   (:require [clojure.string :as str]))
 
+(set! *warn-on-reflection* true)
+
 (defn camel->dashed
   [s]
   (-> s

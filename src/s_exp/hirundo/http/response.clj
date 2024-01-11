@@ -5,6 +5,8 @@
            (io.helidon.webserver.http ServerResponse)
            (java.io FileInputStream InputStream OutputStream)))
 
+(set! *warn-on-reflection* true)
+
 (def ring-core-available?
   (try
     (require 'ring.core.protocols)
@@ -44,12 +46,12 @@
 (when ring-core-available?
   (extend-protocol BodyWriter
     Object
-    (write-body! [o server-response]
+    (write-body! [o ^ServerResponse server-response]
       (let [StreamableResponseBody @(ns-resolve 'ring.core.protocols 'StreamableResponseBody)
             write-body-to-stream (ns-resolve 'ring.core.protocols 'write-body-to-stream)]
         (if (satisfies? StreamableResponseBody o)
           (write-body-to-stream o nil (.outputStream server-response))
-          (.send ^ServerResponse server-response o))))))
+          (.send server-response o))))))
 
 (defn header-name ^HeaderName [ring-header-name]
   (HeaderNames/createFromLowercase (name ring-header-name)))
@@ -58,12 +60,9 @@
   [^ServerResponse server-response headers]
   (when headers
     (run! (fn [[k v]]
-            (.header server-response
-                     (header-name k)
-                     (if (sequential? v)
-                       (into-array String v)
-                       (doto (make-array String 1)
-                         (aset 0 v)))))
+            (let [values-seq (if (sequential? v) v [v])
+                  headers ^"[Ljava.lang.String;" (into-array String values-seq)]
+              (.header server-response (header-name k) headers)))
           headers)))
 
 (defn- set-status!
