@@ -35,10 +35,6 @@
     (.send ^ServerResponse server-response))
 
   Object
-  (write-body! [o server-response]
-    (.send ^ServerResponse server-response o))
-
-  Object
   (write-body! [o ^ServerResponse server-response]
     (if (satisfies? rp/StreamableResponseBody o)
       (rp/write-body-to-stream o nil (.outputStream server-response))
