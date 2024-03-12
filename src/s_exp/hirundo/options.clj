@@ -48,14 +48,14 @@
     (.socketSendBufferSize socket-options-builder
                            (int socket-send-buffer-size)))
 
-  (when socket-reuse-address
+  (when (some? socket-reuse-address)
     (.socketReuseAddress socket-options-builder
                          (boolean socket-reuse-address)))
 
-  (when socket-keep-alive
+  (when (some? socket-keep-alive)
     (.socketKeepAlive socket-options-builder
                       (boolean socket-keep-alive)))
-  (when tcp-no-delay
+  (when (some? tcp-no-delay)
     (.tcpNoDelay socket-options-builder
                  (boolean tcp-no-delay)))
 
