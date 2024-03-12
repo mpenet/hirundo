@@ -17,14 +17,14 @@
         io.helidon.http/helidon-http {:mvn/version "4.0.5"}
         io.helidon.webserver/helidon-webserver {:mvn/version "4.0.5"}
         io.helidon.webserver/helidon-webserver-websocket {:mvn/version "4.0.5"}
-        io.helidon.webserver/helidon-webserver-http2 {:mvn/version "4.0.5"}}
+        io.helidon.webserver/helidon-webserver-http2 {:mvn/version "4.0.5"}
+        org.ring-clojure/ring-core-protocols {:mvn/version "1.12.0"}}
 
  :aliases
  {:test {:extra-paths ["test"]
          :extra-deps {org.clojure/test.check {:mvn/version "1.1.1"}
                       less-awful-ssl/less-awful-ssl {:mvn/version "1.0.6"}
                       eftest/eftest {:mvn/version "0.6.0"}
-                      ring/ring-core {:mvn/version "1.10.0"}
                       stylefruits/gniazdo {:mvn/version "1.2.2"}
                       clj-http/clj-http {:mvn/version "3.12.0"}}
          :exec-fn s-exp.hirundo-test-runner/run}
