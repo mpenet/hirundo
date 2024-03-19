@@ -14,10 +14,10 @@
 
  :paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0-alpha1"}
-        io.helidon.http/helidon-http {:mvn/version "4.0.5"}
-        io.helidon.webserver/helidon-webserver {:mvn/version "4.0.5"}
-        io.helidon.webserver/helidon-webserver-websocket {:mvn/version "4.0.5"}
-        io.helidon.webserver/helidon-webserver-http2 {:mvn/version "4.0.5"}
+        io.helidon.http/helidon-http {:mvn/version "4.0.6"}
+        io.helidon.webserver/helidon-webserver {:mvn/version "4.0.6"}
+        io.helidon.webserver/helidon-webserver-websocket {:mvn/version "4.0.6"}
+        io.helidon.webserver/helidon-webserver-http2 {:mvn/version "4.0.6"}
         org.ring-clojure/ring-core-protocols {:mvn/version "1.12.0"}}
 
  :aliases
