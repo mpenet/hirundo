@@ -41,7 +41,7 @@
       (.send server-response o))))
 
 (defn header-name ^HeaderName [ring-header-name]
-  (HeaderNames/createFromLowercase (name ring-header-name)))
+  (HeaderNames/create (name ring-header-name)))
 
 (defn set-headers!
   [^ServerResponse server-response headers]
