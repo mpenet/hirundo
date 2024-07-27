@@ -63,6 +63,7 @@
                        :protocol (ring-protocol (.prologue server-request))
                        :request-method (ring-method (.prologue server-request))
                        :headers (ring-headers (.headers server-request))
+                       :authority (.authority server-request)
                        ::server-request server-request
                        ::server-response server-response})
 
