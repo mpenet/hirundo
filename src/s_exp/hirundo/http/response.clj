@@ -30,6 +30,11 @@
                 is (FileInputStream. file)]
       (.transferTo is os)))
 
+  String
+  (write-body! [s ^ServerResponse server-response]
+    (.send ^ServerResponse server-response
+           ^String s))
+
   nil
   (write-body! [_ server-response]
     (.send ^ServerResponse server-response))
