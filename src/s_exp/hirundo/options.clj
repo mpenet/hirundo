@@ -60,9 +60,9 @@
   [^WebServerConfig$Builder builder _ write-queue-length _]
   (.writeQueueLength builder (long write-queue-length)))
 
-(defmethod set-server-option! :receive-buffer-size
-  [^WebServerConfig$Builder builder _ receive-buffer-size _]
-  (.receiveBufferSize builder (int receive-buffer-size)))
+(defmethod set-server-option! :write-buffer-size
+  [^WebServerConfig$Builder builder _ write-buffer-size _]
+  (.writeBufferSize builder (int write-buffer-size)))
 
 (defn- set-connection-options!
   [^SocketOptions$Builder socket-options-builder
