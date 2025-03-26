@@ -96,6 +96,68 @@ clj -X:test
 - [x] WebSocket handlers (initial implementation)
 - [ ] Grpc handlers
 
+## Building Uberjars with hirundo
+
+Because of the way helidon handles service configuration we need to carefuly
+craft the uberjar with merged resources for some entries. 
+
+You will need to provide `:conflict-handlers` for the uberjar task that
+concatenates some of the files from resources found in helidon module
+dependencies.
+
+
+Pay attention to the `b/uber` call here:
+
+```clj
+(ns build
+  (:refer-clojure :exclude [test])
+  (:require [clojure.data.json :as json]
+            [clojure.java.io :as io]
+            [clojure.tools.build.api :as b]
+            [clojure.tools.build.tasks.uber :as uber]))
+
+(def lib 'foo/bar)
+(def version "0.1.0-SNAPSHOT")
+(def main 'foo.bar.baz)
+(def class-dir "target/classes")
+(defn- uber-opts [opts]
+  (assoc opts
+         :lib lib :main main
+         :uber-file (format "target/%s-%s.jar" lib version)
+         :basis (b/create-basis {})
+         :class-dir class-dir
+         :src-dirs ["src"]
+         :ns-compile [main]))
+
+(defn append-json
+  [{:keys [path in existing state]}]
+  {:write
+   {path
+    {:append false
+     :string
+     (json/write-str
+      (concat (json/read-str (slurp existing))
+              (json/read-str (#'uber/stream->string in))))}}})
+
+(defn ci "Run the CI pipeline of tests (and build the uberjar)." [opts]
+  (b/delete {:path "target"})
+  (let [opts (uber-opts opts)]
+    (println "\nCopying source...")
+    (b/copy-dir {:src-dirs ["src"] :target-dir class-dir})
+    (println (str "\nCompiling " main "..."))
+    (b/compile-clj opts)
+    (println "\nBuilding JAR...")
+    
+    ;; HERE is the important part
+    (b/uber (assoc opts :conflict-handlers
+                   {"META-INF/helidon/service.loader" :append-dedupe
+                    "META-INF/helidon/feature-metadata.properties" :append-dedupe
+                    "META-INF/helidon/config-metadata.json" append-json
+                    "META-INF/helidon/service-registry.json" append-json})))
+
+  opts)
+```
+
 ## License
 
 Copyright © 2023 Max Penet
