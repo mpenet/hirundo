@@ -176,3 +176,13 @@
                             #"Not Found"
                             (with-ws-client {:subprotocols ["foo"]}))
           "Incorrect subprotocols"))))
+
+(deftest test-websocket-fn-listener
+  (with-server {:websocket-endpoints
+                {"/ws" (fn []
+                         {:message (fn [session data _last]
+                                     (s-exp.hirundo.websocket/send! session data true))})}}
+    (let [client-recv (promise)]
+      (with-ws-client {:on-receive (fn [msg] (deliver client-recv msg))}
+        (wsc/send-msg *client* "bar")
+        (is (= "bar" @client-recv) "echo test")))))
