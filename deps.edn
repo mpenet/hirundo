@@ -1,18 +1,4 @@
-{:exoscale.project/lib com.s-exp/hirundo
- :exoscale.project/version-file "VERSION"
- :exoscale.project/deploy? true
- :exoscale.project/pom-data
- [[:licenses
-   [:license
-    [:name "Eclipse Public License - v 2.0"]
-    [:url "https://www.eclipse.org/legal/epl-2.0/"]
-    [:distribution "repo"]]]]
-
- :slipset.deps-deploy/exec-args {:installer :remote
-                                 :sign-releases? false
-                                 :repository "clojars"}
-
- :paths ["src" "resources"]
+{:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.12.1"}
         io.helidon.http/helidon-http {:mvn/version "4.3.1"}
         io.helidon.webserver/helidon-webserver {:mvn/version "4.3.1"}
@@ -28,8 +14,7 @@
                       stylefruits/gniazdo {:mvn/version "1.2.2"}
                       clj-http/clj-http {:mvn/version "3.12.0"}}
          :exec-fn s-exp.hirundo-test-runner/run}
-
-  :project
-  {:extra-deps {io.github.exoscale/tools.project {:git/sha "ce87a95e95abfde832043aff5af7ecb06ad79fe7"}}
-   :ns-default exoscale.tools.project
-   :jvm-opts ["-Dclojure.main.report=stderr"]}}}
+  :build
+  {:deps {io.github.clojure/tools.build {:git/tag "v0.10.9" :git/sha "e405aac"}
+          io.github.slipset/deps-deploy {:git/sha "07022b92d768590ab25b9ceb619ef17d2922da9a"}}
+   :ns-default build}}}
