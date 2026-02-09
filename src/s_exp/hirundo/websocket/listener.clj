@@ -77,7 +77,7 @@
           headers-map)
     (Optional/of wh)))
 
-(defn make-listener
+(defn listener
   ^WsListener [{:as _listener
                 :keys [message ping pong close error open http-upgrade
                        subprotocols extensions]
@@ -116,3 +116,5 @@
            (if http-upgrade
              (http-upgrade ring-request)
              (http-upgrade-default ring-request))))))))
+
+(def ^:deprecated make-listener listener)

@@ -7,7 +7,8 @@
             [less.awful.ssl :as ls]
             [ring.core.protocols :as p]
             [s-exp.hirundo :as m]
-            [s-exp.hirundo.websocket :as ws])
+            [s-exp.hirundo.websocket :as ws]
+            [s-exp.hirundo.websocket.listener :as l])
   (:import (io.helidon.common.tls Tls TlsClientAuth)
            (io.helidon.common.tls TlsConfig)))
 
@@ -143,6 +144,24 @@
   (with-server {:websocket-endpoints {"/ws"
                                       {:message (fn [session data _last]
                                                   (s-exp.hirundo.websocket/send! session data true))}}}
+    (let [client-recv (promise)]
+      (with-ws-client {:on-receive (fn [msg] (deliver client-recv msg))}
+        (wsc/send-msg *client* "bar")
+        (is (= "bar" @client-recv) "echo test"))))
+
+  (with-server {:websocket-endpoints {"/ws"
+                                      (fn []
+                                        {:message (fn [session data _last]
+                                                    (s-exp.hirundo.websocket/send! session data true))})}}
+    (let [client-recv (promise)]
+      (with-ws-client {:on-receive (fn [msg] (deliver client-recv msg))}
+        (wsc/send-msg *client* "bar")
+        (is (= "bar" @client-recv) "echo test"))))
+
+  (with-server {:websocket-endpoints {"/ws"
+                                      (l/listener
+                                       {:message (fn [session data _last]
+                                                   (s-exp.hirundo.websocket/send! session data true))})}}
     (let [client-recv (promise)]
       (with-ws-client {:on-receive (fn [msg] (deliver client-recv msg))}
         (wsc/send-msg *client* "bar")

@@ -54,7 +54,14 @@ middlewares out there.
 
 * `:http-handler` - ring handler function
 
-* `:websocket-endpoints` - /!\ subject to changes - (map-of string-endpoint handler-fns-map), where handler if can be of `:message`, `:ping`, `:pong`, `:close`, `:error`, `:open`, `:http-upgrade`. `handler-fns-map` can also contain 2 extra keys, `:extensions`, `:subprotocols`, which are sets of subprotocols and protocol extensions acceptable by the server
+* `:websocket-endpoints` - /!\ subject to changes - (map-of string-endpoint
+  handler-fns-map), where handler if can be of `:message`, `:ping`, `:pong`,
+  `:close`, `:error`, `:open`, `:http-upgrade`. `handler-fns-map` can also
+  contain 2 extra keys, `:extensions`, `:subprotocols`, which are sets of
+  subprotocols and protocol extensions acceptable by the server. Alternatively
+  you can pass a fn that emits a map, or directly an Helidon WsListener. Both
+  these options can be useful if you need to keep state for a connection
+  lifecycle.
 
 * `:write-queue-length` 
 

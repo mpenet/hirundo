@@ -1,7 +1,6 @@
 (ns s-exp.hirundo.http.request
   (:require [clojure.string :as str])
-  (:import (clojure.lang PersistentHashMap)
-           (io.helidon.common.uri UriQuery UriPath)
+  (:import (io.helidon.common.uri UriQuery UriPath)
            (io.helidon.http HttpPrologue Headers Header)
            (io.helidon.webserver.http ServerRequest ServerResponse)))
 
