@@ -78,7 +78,7 @@
   (with-server {:http-handler (fn [req] {:body "yes"})}
     (is (-> (client/get *endpoint*) :body (= "yes"))))
 
-  (with-server {:http-handler (fn [req] {:body ["yes" "no"]})}
+  (with-server {:http-handler (fn [req] {:body '("yes" "no")})}
     (is (-> (client/get *endpoint*) :body (= "yesno"))))
 
   (with-server {:http-handler (fn [req] {:body (.getBytes "yes")})}
