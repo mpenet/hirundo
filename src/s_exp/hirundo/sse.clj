@@ -73,14 +73,14 @@
      (response/set-status! server-response 200)
      (try
        (with-open [^OutputStream os
-                   (cond-> (ServerResponse/.outputStream server-response)
+                   (cond-> (.outputStream server-response)
                      compress-opts
                      (brotli/output-stream compress-opts))]
          (monitor-connection! input-ch heartbeat-ms)
          (loop []
            (when-let [val (async/<!! input-ch)]
-             (let [^bytes bs (String/.getBytes (format-event val)
-                                               StandardCharsets/UTF_8)]
+             (let [^bytes bs (.getBytes (format-event val)
+                                        StandardCharsets/UTF_8)]
                (.write os bs)
                (.flush os)
                (recur)))))
