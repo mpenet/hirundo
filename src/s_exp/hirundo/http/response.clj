@@ -24,7 +24,7 @@
               (.header server-response (header-name k) headers)))
           headers)))
 
-(defn- set-status!
+(defn set-status!
   [^ServerResponse server-response status]
   (when status
     (.status server-response (Status/create status))))
