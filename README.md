@@ -46,6 +46,87 @@ There is nothing special to its API, you use hirundo as you would use any blocki
 http adapter like jetty; it is RING compliant so compatible with most/all
 middlewares out there.
 
+## SSE (Server-Sent Events)
+
+Hirundo provides built-in SSE support via `s-exp.hirundo.sse/stream!`.
+Call it from within a ring handler — it takes over the response, streaming
+events to the client until the channel is closed or the client disconnects.
+
+`stream!` returns a map of `{:input-ch :close-ch}`. Put event maps onto
+`input-ch` to send them; close `input-ch` or `close-ch` to end the stream.
+
+```clojure
+(require '[s-exp.hirundo.sse :as sse])
+(require '[clojure.core.async :as async])
+
+(defn my-handler [request]
+  (let [{:keys [input-ch close-ch]} (sse/stream! request)]
+      (async/>!! input-ch {:event "update"
+                          :data ["{\"count\": 1}"]
+                          :id "1"})
+      ;; close to end the SSE stream
+      (async/close! input-ch))
+    nil)
+```
+
+Messages are maps with keys `:event`, `:data`, `:id`, `:retry`.
+`:data` is a vector of strings — each entry becomes a separate `data:` line
+per the SSE spec.
+
+### Options
+
+* `:input-ch` - user-provided `core.async` channel. If not provided, one is
+  created with a buffer of 10.
+* `:close-ch` - user-provided `core.async` promise channel for close signaling.
+  If not provided, one is created internally.
+* `:headers` - extra headers to merge into the SSE response.
+* `:compression` - compression settings map. Defaults to
+  `{:type :brotli :quality 4 :window-size 18}`. Only applied when the client
+  sends `accept-encoding: br`. Keys:
+  * `:type` - compression type (currently only `:brotli`)
+  * `:quality` - compression quality (0-11)
+  * `:window-size` - LZ77 window size (10-24)
+* `:heartbeat-ms` - interval in ms for heartbeat SSE comments to detect client
+  disconnect (default 1500).
+
+### Brotli compression
+
+When `:compression` is set, the response is compressed with brotli (`content-encoding: br`).
+This can significantly reduce bandwidth for text-heavy SSE streams.
+
+```clojure
+(let [{:keys [input-ch]} (sse/stream! request
+                                      :compression {:type :brotli
+                                                    :quality 4
+                                                    :window-size 18})]
+  ;; put events onto input-ch
+  )
+```
+
+### Client disconnect detection
+
+A heartbeat SSE comment (`:` line, ignored by clients) is sent periodically. When
+the any write fails (client gone), both channels are closed and the stream ends.
+Configure the interval with `:heartbeat-ms`.
+
+### Datastar demo
+
+The `demo/` directory contains a full [Datastar](https://data-star.dev/) example
+that demonstrates SSE streaming with hirundo. It includes:
+
+- **Live Clock** — streams the current time every second via `patch-elements`
+- **Counter** — click to start a counting stream
+- **Shop Stats** — uses `patch-signals` to stream reactive state (order count, revenue, last item sold) without replacing DOM elements
+- **Live Feed** — simulated event log with brotli compression
+
+Run it with:
+
+```
+cd demo && clj -M -m s-exp.hirundo.demo
+```
+
+Then open http://localhost:8080.
+
 ## Supported options
 
 * `:host` - host of the default socket, defaults to 127.0.0.1
@@ -101,6 +182,7 @@ clj -X:test
 
 - [x] HTTP (1.1 & 2) server/handlers
 - [x] WebSocket handlers (initial implementation)
+- [x] SSE with optional brotli compression
 - [ ] Grpc handlers
 
 ## Building Uberjars with hirundo
