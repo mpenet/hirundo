@@ -46,6 +46,61 @@ There is nothing special to its API, you use hirundo as you would use any blocki
 http adapter like jetty; it is RING compliant so compatible with most/all
 middlewares out there.
 
+## SSE (Server-Sent Events)
+
+Hirundo provides built-in SSE support via `s-exp.hirundo.sse/response!`.
+Call it from within a ring handler — it blocks the handler thread, streaming
+events to the client until the channel is closed or the client disconnects.
+
+```clojure
+(require '[s-exp.hirundo.sse :as sse])
+(require '[clojure.core.async :as async])
+
+(defn my-handler [request]
+  (let [ch (async/chan 16)]
+    ;; start producing events before stream! blocks
+    (async/go
+      (async/>! ch "simple string message")
+      (async/>! ch {:event "update" :data "{\"count\": 1}" :id "1"})
+      ;; close to end the SSE stream
+      (async/close! ch))
+    ;; blocks until ch is closed or client disconnects
+    (sse/stream! request :input-ch ch)
+    nil))
+```
+
+Messages can be plain strings (sent as `data:` fields) or maps with keys
+`:event`, `:data`, `:id`, `:retry`. Multiline `:data` values are split into
+multiple `data:` lines per the SSE spec.
+
+### Options
+
+* `:input-ch` - user-provided `core.async` channel. If not provided, one is
+  created with `:buffer-size` capacity.
+* `:buffer-size` - channel buffer size (default 16)
+* `:headers` - extra headers to merge into the response
+* `:compression` - enables compression. A map with `:type` (currently `:brotli`),
+  and optional `:quality` (0-11) and `:window-size` (10-24)
+* `:heartbeat-ms` - interval in ms for heartbeat SSE comments to detect client
+  disconnect (default 1500)
+
+### Brotli compression
+
+When `:compression` is set, the response is compressed with brotli (`content-encoding: br`).
+This can significantly reduce bandwidth for text-heavy SSE streams.
+
+```clojure
+(sse/stream! request
+             :input-ch ch
+             :compression {:type :brotli :quality 4 :window-size 18})
+```
+
+### Client disconnect detection
+
+A heartbeat SSE comment (`:` line, ignored by clients) is sent periodically. When
+the write fails (client gone), the channel is closed and the handler unblocks.
+Configure the interval with `:heartbeat-ms`.
+
 ## Supported options
 
 * `:host` - host of the default socket, defaults to 127.0.0.1
@@ -101,6 +156,7 @@ clj -X:test
 
 - [x] HTTP (1.1 & 2) server/handlers
 - [x] WebSocket handlers (initial implementation)
+- [x] SSE with optional brotli compression
 - [ ] Grpc handlers
 
 ## Building Uberjars with hirundo

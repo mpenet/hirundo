@@ -24,13 +24,14 @@
               (.header server-response (header-name k) headers)))
           headers)))
 
-(defn- set-status!
+(defn set-status!
   [^ServerResponse server-response status]
   (when status
     (.status server-response (Status/create status))))
 
 (defn set-response!
   [^ServerResponse server-response {:as response :keys [body headers status]}]
-  (set-headers! server-response headers)
-  (set-status! server-response status)
-  (write-body! server-response response body))
+  (when response
+    (set-headers! server-response headers)
+    (set-status! server-response status)
+    (write-body! server-response response body)))
