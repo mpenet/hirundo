@@ -74,10 +74,10 @@
                               (into headers)))
      (response/set-status! server-response 200)
      (try
-       (with-open [^OutputStream os
-                   (cond-> (.outputStream server-response)
-                     brotli-compression
-                     (brotli/output-stream compression))]
+       (with-open [^OutputStream raw-os (.outputStream server-response)
+                   ^OutputStream os (cond-> raw-os
+                                      brotli-compression
+                                      (brotli/output-stream compression))]
          (connection-heartbeat! input-ch heartbeat-ms)
          (loop []
            (when-let [val (async/<!! input-ch)]
@@ -85,6 +85,8 @@
                                         StandardCharsets/UTF_8)]
                (.write os bs)
                (.flush os)
+               (when brotli-compression
+                 (.flush raw-os))
                (recur)))))
        (catch Exception _e
          ;; FIXME check for specific failures, ex failure to write & co

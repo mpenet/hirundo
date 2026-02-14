@@ -125,8 +125,7 @@
           (recur))))
     (sse/stream! request
                  :input-ch ch
-                 ;; :compression {:type :brotli :quality 4 :window-size 18}
-                 )
+                 :compression {:type :brotli :quality 4 :window-size 18})
     nil))
 
 (defn handle-count
@@ -141,8 +140,7 @@
           (recur (inc n)))))
     (sse/stream! request
                  :input-ch ch
-                 ;; :compression {:type :brotli :quality 4 :window-size 18}
-                 )
+                 :compression {:type :brotli :quality 4 :window-size 18})
     nil))
 
 (def feed-messages
@@ -174,8 +172,7 @@
           (recur (inc i)))))
     (sse/stream! request
                  :input-ch ch
-                 ;; :compression {:type :brotli :quality 4 :window-size 18}
-                 )
+                 :compression {:type :brotli :quality 4 :window-size 18})
     nil))
 
 (def handle-js
