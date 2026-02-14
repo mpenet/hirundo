@@ -65,7 +65,7 @@
     (let [ch (async/chan 16)]
       (with-server {:http-handler
                     (fn [req]
-                      (sse/response! req {:input-ch ch})
+                      (sse/stream! req {:input-ch ch})
                       nil)}
         (let [response-future (future (client/get (str endpoint "/sse")
                                                   {:as :string}))]
@@ -93,8 +93,8 @@
     (let [ch (async/chan 16)]
       (with-server {:http-handler
                     (fn [req]
-                      (sse/response! req {:input-ch ch
-                                          :headers {"x-custom" "test"}})
+                      (sse/stream! req {:input-ch ch
+                                        :headers {"x-custom" "test"}})
                       nil)}
         (let [response-future (future (client/get (str endpoint "/sse")
                                                   {:as :string}))]
@@ -110,7 +110,7 @@
     (let [ch (async/chan 16)]
       (with-server {:http-handler
                     (fn [req]
-                      (sse/response! req {:input-ch ch})
+                      (sse/stream! req {:input-ch ch})
                       nil)}
         (let [response-future (future (client/get (str endpoint "/sse")
                                                   {:as :string}))]
@@ -126,8 +126,8 @@
           handler-returned (promise)]
       (with-server {:http-handler
                     (fn [req]
-                      (sse/response! req {:input-ch ch
-                                          :heartbeat-ms 500})
+                      (sse/stream! req {:input-ch ch
+                                        :heartbeat-ms 500})
                       (deliver handler-returned true)
                       nil)}
         ;; fire request with short socket timeout to trigger disconnect
@@ -149,9 +149,10 @@
     (let [ch (async/chan 16)]
       (with-server {:http-handler
                     (fn [req]
-                      (sse/response! req {:input-ch ch
-                                          :compress {:quality 4
-                                                     :window-size 18}})
+                      (sse/stream! req {:input-ch ch
+                                        :compression {:type :brotli
+                                                      :quality 4
+                                                      :window-size 18}})
                       nil)}
         (let [response-future (future (client/get (str endpoint "/sse")
                                                   {:as :byte-array
@@ -170,8 +171,8 @@
     (let [ch (async/chan 16)]
       (with-server {:http-handler
                     (fn [req]
-                      (sse/response! req {:input-ch ch
-                                          :compress true})
+                      (sse/stream! req {:input-ch ch
+                                        :compression {:type :brotli}})
                       nil)}
         (let [response-future (future (client/get (str endpoint "/sse")
                                                   {:as :byte-array
@@ -188,7 +189,7 @@
     (let [my-ch (async/chan 4)]
       (with-server {:http-handler
                     (fn [req]
-                      (sse/response! req {:input-ch my-ch})
+                      (sse/stream! req {:input-ch my-ch})
                       nil)}
         (let [response-future (future (client/get (str endpoint "/sse")
                                                   {:as :string}))]

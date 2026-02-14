@@ -9,34 +9,37 @@
 
 (set! *warn-on-reflection* true)
 
+(defn- format-op
+  [^StringBuilder sb op val]
+  (doto sb
+    (.append (name op))
+    (.append ": ")
+    (.append val)
+    (.append "\n")))
+
 (defn- format-event
   "Formats SSE event data. `msg` can be a string or a map with keys :event,
   :data, :id, :retry."
   ^String [msg]
   (let [sb (StringBuilder.)]
-    (if (map? msg)
-      (let [{:keys [event data id retry]} msg]
-        (when event (StringBuilder/.append sb (str "event: " event "\n")))
-        (when id (StringBuilder/.append sb (str "id: " id "\n")))
-        (when retry (StringBuilder/.append sb (str "retry: " retry "\n")))
-        (when data
-          (run! (fn [line]
-                  (StringBuilder/.append sb (str "data: " line "\n")))
-                (str/split (str data) #"\n"))))
-      (StringBuilder/.append sb (str "data: " msg "\n")))
-    (StringBuilder/.append sb "\n")
-    (StringBuilder/.toString sb)))
+    (let [{:keys [event data id retry]} msg]
+      (when event (format-op sb :event event))
+      (when id (format-op sb :id id))
+      (when retry (format-op sb :retry retry))
+      (run! #(format-op sb :data %) data))
+    (.append sb "\n")
+    (.toString sb)))
 
-(defn- monitor-connection!
+(defn- connection-heartbeat!
   "Periodically puts heartbeat bytes (SSE comment) onto `input-ch` to detect
   client disconnect via write failure. Stops when `input-ch` is closed."
   [input-ch heartbeat-ms]
   (async/go-loop []
     (async/<! (async/timeout heartbeat-ms))
-    (when (async/>! input-ch ":\n")
+    (when (async/>! input-ch ":")
       (recur))))
 
-(defn response!
+(defn stream!
   "Sets up an SSE connection from within a ring handler. Takes the ring request
   map and returns a map with:
     :input-ch - a core.async channel to send messages to. Messages can be
@@ -55,18 +58,17 @@
 
   The ring handler should return nil after calling this, as the response is
   handled directly."
-  ([request & {:keys [headers buffer-size compress input-ch heartbeat-ms]
+  ([request & {:keys [headers buffer-size compression input-ch heartbeat-ms]
                :or {buffer-size 16
                     heartbeat-ms 1500}}]
    (let [^ServerResponse server-response (:s-exp.hirundo.http.request/server-response request)
-         compress-opts (when compress
-                         (if (map? compress) compress {}))
-         input-ch (or input-ch (async/chan buffer-size))]
+         input-ch (or input-ch (async/chan buffer-size))
+         brotli-compression (= :brotli (:type compression))]
      (response/set-headers! server-response
                             (cond-> {"content-type" "text/event-stream"
                                      "cache-control" "no-cache"
                                      "connection" "keep-alive"}
-                              compress-opts
+                              brotli-compression
                               (assoc "content-encoding" "br")
                               :then
                               (into headers)))
@@ -74,9 +76,9 @@
      (try
        (with-open [^OutputStream os
                    (cond-> (.outputStream server-response)
-                     compress-opts
-                     (brotli/output-stream compress-opts))]
-         (monitor-connection! input-ch heartbeat-ms)
+                     brotli-compression
+                     (brotli/output-stream compression))]
+         (connection-heartbeat! input-ch heartbeat-ms)
          (loop []
            (when-let [val (async/<!! input-ch)]
              (let [^bytes bs (.getBytes (format-event val)
@@ -88,4 +90,5 @@
          ;; FIXME check for specific failures, ex failure to write & co
          )
        (finally
-         (async/close! input-ch))))))
+         (async/close! input-ch)))
+     {:input-ch input-ch})))
