@@ -136,8 +136,7 @@
         (when (async/>!! input-ch (patch-elements
                                    [(str "<div id=\"clock\" class=\"time\">" time-str "</div>")]))
           (Thread/sleep 1000)
-          (recur))))
-    nil))
+          (recur))))))
 
 (defn handle-count
   "Counts from 1 to 1e6, then stops."
@@ -172,8 +171,7 @@
                                                    "revenue" (format "%.2f" revenue)
                                                    "last__item" name}]))
           (Thread/sleep (+ 800 (rand-int 500)))
-          (recur orders revenue)))))
-  nil)
+          (recur orders revenue))))))
 
 (def feed-messages
   ["New user signed up"
@@ -201,8 +199,7 @@
                             "</div></div>")]
         (when (async/>!! input-ch (patch-elements [items-html] :mode :inner :selector "#feed"))
           (Thread/sleep (+ 100 (rand-int 1000)))
-          (recur (inc i)))))
-    nil))
+          (recur (inc i)))))))
 
 (def handle-js
   {:headers {"content-type" "text/javascript"}
