@@ -41,10 +41,48 @@ for clojure, loom based
 
 ```
 
-
 There is nothing special to its API, you use hirundo as you would use any blocking
 http adapter like jetty; it is RING compliant so compatible with most/all
 middlewares out there.
+
+## Supported options
+
+* `:host` - host of the default socket, defaults to 127.0.0.1
+
+* `:port` - port the server listens to, defaults to random free port
+
+* `:http-handler` - ring handler function
+
+* `:websocket-endpoints` - /!\ subject to changes - (map-of string-endpoint
+  handler-fns-map), where handler if can be of `:message`, `:ping`, `:pong`,
+  `:close`, `:error`, `:open`, `:http-upgrade`. `handler-fns-map` can also
+  contain 2 extra keys, `:extensions`, `:subprotocols`, which are sets of
+  subprotocols and protocol extensions acceptable by the server. Alternatively
+  you can pass a fn that emits a map, or directly an Helidon WsListener. Both
+  these options can be useful if you need to keep state for a connection
+  lifecycle.
+
+* `:write-queue-length` 
+
+* `:backlog` 
+
+* `:max-payload-size` 
+
+* `:write-queue-length`
+
+* `:receive-buffer-size` 
+
+* `:connection-options`(map-of `:socket-receive-buffer-size` `:socket-send-buffer-size` `:socket-reuse-address` `:socket-keep-alive` `:tcp-no-delay` `:read-timeout` `:connect-timeout`)
+
+* `:tls` - A `io.helidon.nima.common.tls.Tls` instance
+
+
+You can hook into the server builder via `s-exp.hirundo.options/set-server-option!`
+multimethod at runtime and add/modify whatever you want if you need anything
+extra we don't provide (yet).
+
+http2 (h2 & h2c) is supported out of the box, iif a client connects with http2
+it will do the protocol switch automatically.
 
 ## SSE (Server-Sent Events)
 
@@ -127,45 +165,6 @@ cd demo && clj -M -m s-exp.hirundo.demo
 
 Then open http://localhost:8080.
 
-## Supported options
-
-* `:host` - host of the default socket, defaults to 127.0.0.1
-
-* `:port` - port the server listens to, defaults to random free port
-
-* `:http-handler` - ring handler function
-
-* `:websocket-endpoints` - /!\ subject to changes - (map-of string-endpoint
-  handler-fns-map), where handler if can be of `:message`, `:ping`, `:pong`,
-  `:close`, `:error`, `:open`, `:http-upgrade`. `handler-fns-map` can also
-  contain 2 extra keys, `:extensions`, `:subprotocols`, which are sets of
-  subprotocols and protocol extensions acceptable by the server. Alternatively
-  you can pass a fn that emits a map, or directly an Helidon WsListener. Both
-  these options can be useful if you need to keep state for a connection
-  lifecycle.
-
-* `:write-queue-length` 
-
-* `:backlog` 
-
-* `:max-payload-size` 
-
-* `:write-queue-length`
-
-* `:receive-buffer-size` 
-
-* `:connection-options`(map-of `:socket-receive-buffer-size` `:socket-send-buffer-size` `:socket-reuse-address` `:socket-keep-alive` `:tcp-no-delay` `:read-timeout` `:connect-timeout`)
-
-* `:tls` - A `io.helidon.nima.common.tls.Tls` instance
-
-
-You can hook into the server builder via `s-exp.hirundo.options/set-server-option!`
-multimethod at runtime and add/modify whatever you want if you need anything
-extra we don't provide (yet).
-
-http2 (h2 & h2c) is supported out of the box, iif a client connects with http2
-it will do the protocol switch automatically.
-
 ## Installation
 
 Note: You need to use java **21**
@@ -177,13 +176,6 @@ https://clojars.org/com.s-exp/hirundo
 ```
 clj -X:test
 ```
-
-## Implemented
-
-- [x] HTTP (1.1 & 2) server/handlers
-- [x] WebSocket handlers (initial implementation)
-- [x] SSE with optional brotli compression
-- [ ] Grpc handlers
 
 ## Building Uberjars with hirundo
 
