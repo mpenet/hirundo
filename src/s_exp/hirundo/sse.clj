@@ -54,8 +54,9 @@
            (re-find #"(?i)\bbr\b")))
 
 (defn stream!
-  ([request & {:keys [headers compression heartbeat-ms close-ch input-ch]
+  ([request & {:keys [headers status compression heartbeat-ms close-ch input-ch]
                :or {heartbeat-ms 1500
+                    status 200
                     compression {:type :brotli :quality 4 :window-size 18}}}]
    (let [^ServerResponse server-response (:s-exp.hirundo.http.request/server-response request)
          close-ch (or close-ch (async/promise-chan))
@@ -70,7 +71,7 @@
                               (assoc "content-encoding" "br")
                               :then
                               (into headers)))
-     (response/set-status! server-response 200)
+     (response/set-status! server-response status)
      (connection-heartbeat! input-ch close-ch heartbeat-ms)
      (async/io-thread
       (try
