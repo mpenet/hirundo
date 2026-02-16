@@ -103,8 +103,8 @@ events to the client until the channel is closed or the client disconnects.
                           :data ["{\"count\": 1}"]
                           :id "1"})
       ;; close to end the SSE stream
-      (async/close! input-ch))
-    nil)
+      (async/close! input-ch)))
+
 ```
 
 Messages are maps with keys `:event`, `:data`, `:id`, `:retry`.
