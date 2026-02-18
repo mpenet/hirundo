@@ -90,8 +90,11 @@ Hirundo provides built-in SSE support via `s-exp.hirundo.sse/stream!`.
 Call it from within a ring handler — it takes over the response, streaming
 events to the client until the channel is closed or the client disconnects.
 
-`stream!` returns a map of `{:input-ch :close-ch}`. Put event maps onto
-`input-ch` to send them; close `input-ch` or `close-ch` to end the stream.
+`stream!` returns a `Closeable` record with keys `:input-ch`, `:close-ch`, and `:io-ch`.
+Put event maps onto `input-ch` to send them; close `input-ch` or `close-ch` to
+end the stream. Because the stream is `java.io.Closeable`, you can use it with
+`with-open` — calling `.close` will block until the IO loop completes, ensuring
+all resources are cleaned up.
 
 ```clojure
 (require '[s-exp.hirundo.sse :as sse])
