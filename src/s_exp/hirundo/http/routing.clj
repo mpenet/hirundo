@@ -1,7 +1,8 @@
 (ns s-exp.hirundo.http.routing
   (:require [s-exp.hirundo.http.request :as request]
             [s-exp.hirundo.http.response :as response]
-            [s-exp.hirundo.options :as options])
+            [s-exp.hirundo.options :as options]
+            s-exp.hirundo.sse)
   (:import (io.helidon.webserver WebServerConfig$Builder)
            (io.helidon.webserver.http Handler
                                       HttpRouting)))
@@ -18,9 +19,10 @@
         (into-array Handler
                     [(reify Handler
                        (handle [_ server-request server-response]
-                         (->> (request/ring-request server-request server-response)
-                              handler
-                              (response/set-response! server-response))))]))))))
+                         (let [response (handler (request/ring-request server-request server-response))]
+                           (cond->> response
+                             (map? response)
+                             (response/set-response! server-response)))))]))))))
 
 (defmethod options/set-server-option! :http-handler
   [^WebServerConfig$Builder builder _ handler options]

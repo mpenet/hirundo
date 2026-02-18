@@ -128,23 +128,23 @@
 (defn handle-clock
   "Streams the current time every second."
   [request]
-  (let [{:as _stream :keys [input-ch _close-ch]}
-        (sse/stream! request)]
+  (with-open [stream (sse/stream! request)]
     (loop []
       (let [time-str (.format (java.time.LocalTime/now)
                               (java.time.format.DateTimeFormatter/ofPattern "HH:mm:ss"))]
-        (when (async/>!! input-ch (patch-elements
-                                   [(str "<div id=\"clock\" class=\"time\">" time-str "</div>")]))
+        (when (async/>!! (:input-ch stream)
+                         (patch-elements
+                          [(str "<div id=\"clock\" class=\"time\">" time-str "</div>")]))
           (Thread/sleep 1000)
           (recur))))))
 
 (defn handle-count
   "Counts from 1 to 1e6, then stops."
   [request]
-  (let [{:keys [input-ch]} (sse/stream! request)]
+  (with-open [stream (sse/stream! request)]
     (dotimes [n 1e6]
-      (when (async/>!! input-ch (patch-elements
-                                 [(str "<div id=\"counter\" class=\"counter\">" n "</div>")]))
+      (when (async/>!! (:input-ch stream) (patch-elements
+                                           [(str "<div id=\"counter\" class=\"counter\">" n "</div>")]))
         (Thread/sleep 50)))))
 
 (def shop-items
@@ -160,16 +160,16 @@
 (defn handle-shop-stats
   "Streams shop signals: order count, revenue, last item sold."
   [request]
-  (let [{:keys [input-ch]} (sse/stream! request
-                                        :compression {:type :brotli :quality 4 :window-size 18})]
+  (with-open [stream (sse/stream! request
+                                  :compression {:type :brotli :quality 4 :window-size 18})]
     (loop [orders 0
            revenue 0.0]
       (let [{:keys [name price]} (rand-nth shop-items)
             orders (inc orders)
             revenue (+ revenue price)]
-        (when (async/>!! input-ch (patch-signals [{"orders" orders
-                                                   "revenue" (format "%.2f" revenue)
-                                                   "last__item" name}]))
+        (when (async/>!! (:input-ch stream) (patch-signals [{"orders" orders
+                                                             "revenue" (format "%.2f" revenue)
+                                                             "last__item" name}]))
           (Thread/sleep (+ 800 (rand-int 500)))
           (recur orders revenue))))))
 
@@ -188,7 +188,7 @@
 (defn handle-feed
   "Simulates a live event feed with brotli compression."
   [request]
-  (let [{:keys [input-ch]} (sse/stream! request)]
+  (with-open [stream (sse/stream! request)]
     (loop [i 0]
       (let [msg (nth feed-messages (mod i (count feed-messages)))
             time-str (.format (java.time.LocalTime/now)
@@ -197,7 +197,7 @@
                             "<div class=\"feed-item\">"
                             "<strong>" time-str "</strong> " msg
                             "</div></div>")]
-        (when (async/>!! input-ch (patch-elements [items-html] :mode :inner :selector "#feed"))
+        (when (async/>!! (:input-ch stream) (patch-elements [items-html] :mode :inner :selector "#feed"))
           (Thread/sleep (+ 100 (rand-int 1000)))
           (recur (inc i)))))))
 

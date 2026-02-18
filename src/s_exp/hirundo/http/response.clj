@@ -31,7 +31,6 @@
 
 (defn set-response!
   [^ServerResponse server-response {:as response :keys [body headers status]}]
-  (when response
-    (set-headers! server-response headers)
-    (set-status! server-response status)
-    (write-body! server-response response body)))
+  (set-headers! server-response headers)
+  (set-status! server-response status)
+  (write-body! server-response response body))

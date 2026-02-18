@@ -3,7 +3,7 @@
             [s-exp.hirundo.compression.brotli :as brotli]
             [s-exp.hirundo.http.response :as response])
   (:import (io.helidon.webserver.http ServerResponse)
-           (java.io OutputStream)
+           (java.io OutputStream Closeable)
            (java.nio.charset StandardCharsets)))
 
 (set! *warn-on-reflection* true)
@@ -42,6 +42,8 @@
   "Periodically puts heartbeat bytes (SSE comment) onto `input-ch` to detect
   client disconnect via write failure. Stops when `input-ch` is closed."
   [input-ch close-ch heartbeat-ms]
+  ;; first hb has to go early and on the request thread
+  (async/>!! input-ch {:comment nil})
   (async/go-loop []
     (async/<! (async/timeout heartbeat-ms))
     (if (async/>! input-ch {:comment nil})
@@ -53,49 +55,55 @@
   (some->> (get-in request [:headers "accept-encoding"])
            (re-find #"(?i)\bbr\b")))
 
-(defn stream!
-  ([request & {:keys [headers status compression heartbeat-ms close-ch input-ch]
-               :or {heartbeat-ms 1500
-                    status 200
-                    compression {:type :brotli :quality 4 :window-size 18}}}]
-   (let [^ServerResponse server-response (:s-exp.hirundo.http.request/server-response request)
-         close-ch (or close-ch (async/promise-chan))
-         input-ch (or input-ch (async/chan 10))
-         brotli-compression (and (= :brotli (:type compression))
-                                 (brotli-request? request))]
-     (response/set-headers! server-response
-                            (cond-> {"content-type" "text/event-stream"
-                                     "cache-control" "no-cache"
-                                     "connection" "keep-alive"}
-                              brotli-compression
-                              (assoc "content-encoding" "br")
-                              :then
-                              (into headers)))
-     (response/set-status! server-response status)
-     (connection-heartbeat! input-ch close-ch heartbeat-ms)
-     (async/io-thread
-      (try
-        (with-open [^OutputStream raw-os (.outputStream server-response)
-                    ^OutputStream os (cond-> raw-os
-                                       brotli-compression
-                                       (brotli/output-stream compression))]
+(defrecord Stream [input-ch close-ch io-ch]
+  Closeable
+  (close [_this] (async/<!! io-ch)))
 
-          (loop []
-            (let [[val ch] (async/alts!! [input-ch close-ch])]
-              (when (and val (= input-ch ch))
-                (let [^bytes bs (.getBytes (event val)
-                                           StandardCharsets/UTF_8)]
-                  (.write os bs)
-                  (.flush os)
-                  (when brotli-compression
-                    (.flush raw-os))
-                  (recur))))))
-        ;; these will trigger on-close, causing jump out of the loop triggering
-        ;; closing of both channels
-        (catch java.net.SocketException _e)
-        (catch java.io.UncheckedIOException _e)
-        (catch io.helidon.webserver.ServerConnectionException _e)
-        (finally
-          (async/close! input-ch)
-          (async/close! close-ch))))
-     {:input-ch input-ch :close-ch close-ch})))
+(defn stream!
+  ^Stream
+  [request & {:keys [headers status compression heartbeat-ms close-ch input-ch]
+              :or {heartbeat-ms 1500
+                   status 200
+                   compression {:type :brotli :quality 4 :window-size 18}}}]
+  (let [^ServerResponse server-response (:s-exp.hirundo.http.request/server-response request)
+        close-ch (or close-ch (async/promise-chan))
+        input-ch (or input-ch (async/chan 10))
+        brotli-compression (and (= :brotli (:type compression))
+                                (brotli-request? request))]
+    (response/set-headers! server-response
+                           (cond-> {"content-type" "text/event-stream"
+                                    "cache-control" "no-cache"
+                                    "connection" "keep-alive"}
+                             brotli-compression
+                             (assoc "content-encoding" "br")
+                             :then
+                             (into headers)))
+    (response/set-status! server-response status)
+    (connection-heartbeat! input-ch close-ch heartbeat-ms)
+    (let [io-ch
+          (async/io-thread
+           (try
+             (with-open [^OutputStream raw-os (.outputStream server-response)
+                         ^OutputStream os (cond-> raw-os
+                                            brotli-compression
+                                            (brotli/output-stream compression))]
+
+               (loop []
+                 (let [[val ch] (async/alts!! [input-ch close-ch])]
+                   (when (and val (= input-ch ch))
+                     (let [^bytes bs (.getBytes (event val)
+                                                StandardCharsets/UTF_8)]
+                       (.write os bs)
+                       (.flush os)
+                       (when brotli-compression
+                         (.flush raw-os))
+                       (recur))))))
+             ;; these will trigger on-close, causing jump out of the loop triggering
+             ;; closing of both channels
+             (catch java.net.SocketException _e)
+             (catch java.io.UncheckedIOException _e)
+             (catch io.helidon.webserver.ServerConnectionException _e)
+             (finally
+               (async/close! input-ch)
+               (async/close! close-ch))))]
+      (map->Stream {:input-ch input-ch :close-ch close-ch :io-ch io-ch}))))
