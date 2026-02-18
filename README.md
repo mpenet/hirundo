@@ -98,12 +98,10 @@ events to the client until the channel is closed or the client disconnects.
 (require '[clojure.core.async :as async])
 
 (defn my-handler [request]
-  (let [{:keys [input-ch close-ch]} (sse/stream! request)]
-      (async/>!! input-ch {:event "update"
-                          :data ["{\"count\": 1}"]
-                          :id "1"})
-      ;; close to end the SSE stream
-      (async/close! input-ch)))
+  (with-open [s (sse/stream! request)]
+    (async/>!! (:input-ch s) {:event "update"
+                              :data ["{\"count\": 1}"]
+                              :id "1"})))
 
 ```
 
@@ -129,8 +127,10 @@ per the SSE spec.
 
 ### Brotli compression
 
-When `:compression` is set, the response is compressed with brotli (`content-encoding: br`).
+The response is compressed with brotli (`content-encoding: br`) when the client accepts it.
 This can significantly reduce bandwidth for text-heavy SSE streams.
+
+You can also alter the various brotli options:
 
 ```clojure
 (let [{:keys [input-ch]} (sse/stream! request
