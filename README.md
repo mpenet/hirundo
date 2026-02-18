@@ -99,10 +99,10 @@ events to the client until the channel is closed or the client disconnects.
 
 (defn my-handler [request]
   (with-open [s (sse/stream! request)]
-    (async/>!! (:input-ch s) {:event "update"
-                              :data ["{\"count\": 1}"]
-                              :id "1"})))
-
+    (async/>!! (:input-ch s) 
+               {:event "update"
+                :data ["{\"count\": 1}"]
+                :id "1"})))
 ```
 
 Messages are maps with keys `:event`, `:data`, `:id`, `:retry`.
