@@ -5,6 +5,7 @@
         io.helidon.webserver/helidon-webserver {:mvn/version "4.3.1"}
         io.helidon.webserver/helidon-webserver-websocket {:mvn/version "4.3.1"}
         io.helidon.webserver/helidon-webserver-http2 {:mvn/version "4.3.1"}
+        io.helidon.logging/helidon-logging-slf4j {:mvn/version "4.3.1"}
         org.ring-clojure/ring-core-protocols {:mvn/version "1.14.2"}
         com.aayushatharva.brotli4j/brotli4j {:mvn/version "1.18.0"}}
 
