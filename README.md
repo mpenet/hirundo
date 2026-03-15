@@ -118,6 +118,7 @@ have to call Java methods directly:
 | `(grpc/complete! observer)` | Signal successful stream completion |
 | `(grpc/complete! observer msg)` | Send one message then complete (unary shorthand) |
 | `(grpc/error! observer throwable)` | Signal an error |
+| `(grpc/stream-observer {:on-next f :on-error f :on-completed f})` | Build a `StreamObserver` from callback fns (all optional) |
 
 ### Service descriptor
 
@@ -161,13 +162,10 @@ must return a `StreamObserver` that handles incoming client messages.
  :methods {"Chat"
            {:type    :bidi
             :handler (fn [response-observer]
-                       (reify StreamObserver
-                         (onNext [_ msg]
-                           (grpc/send! response-observer (echo msg)))
-                         (onError [_ t]
-                           (grpc/error! response-observer t))
-                         (onCompleted [_]
-                           (grpc/complete! response-observer))))}}}
+                       (grpc/stream-observer
+                        {:on-next      #(grpc/send! response-observer (echo %))
+                         :on-error     #(grpc/error! response-observer %)
+                         :on-completed #(grpc/complete! response-observer)}))}}}
 ```
 
 ## SSE (Server-Sent Events)

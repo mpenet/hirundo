@@ -142,13 +142,10 @@
        :name "PersonService"
        :methods {"BidiEcho" {:type :bidi
                              :handler (fn [response-observer]
-                                        (reify StreamObserver
-                                          (onNext [_ req]
-                                            (grpc/send! response-observer req))
-                                          (onError [_ t]
-                                            (grpc/error! response-observer t))
-                                          (onCompleted [_]
-                                            (grpc/complete! response-observer))))}}}]}
+                                        (grpc/stream-observer
+                                         {:on-next      #(grpc/send! response-observer %)
+                                          :on-error     #(grpc/error! response-observer %)
+                                          :on-completed #(grpc/complete! response-observer)}))}}}]}
     (with-channel (.port server)
       (let [received (atom [])
             done (promise)
