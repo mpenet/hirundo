@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package hirundo.test;
+
+option java_package = "hirundo.test";
+option java_multiple_files = true;
+
+message Person {
+  int32  id    = 1;
+  string name  = 2;
+  string email = 3;
+}

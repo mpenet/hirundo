@@ -76,6 +76,7 @@ middlewares out there.
 
 * `:tls` - A `io.helidon.nima.common.tls.Tls` instance
 
+* `:grpc-services` - vector of gRPC service descriptors (see [gRPC](#grpc) section)
 
 You can hook into the server builder via `s-exp.hirundo.options/set-server-option!`
 multimethod at runtime and add/modify whatever you want if you need anything
@@ -83,6 +84,133 @@ extra we don't provide (yet).
 
 http2 (h2 & h2c) is supported out of the box, iif a client connects with http2
 it will do the protocol switch automatically.
+
+## gRPC
+
+Hirundo supports hosting gRPC services on the same port as HTTP/WebSocket via
+Helidon's native gRPC module. You bring your own generated protobuf Java classes;
+hirundo passes raw protobuf objects to your handlers — serialization is your
+responsibility (e.g. wrap with [pronto](https://github.com/AppsFlyer/pronto) for
+idiomatic Clojure maps).
+
+```clojure
+(require '[s-exp.hirundo :as hirundo])
+(require '[s-exp.hirundo.grpc :as grpc])
+
+(hirundo/start!
+  {:grpc-services
+   [{:proto   MyProtoOuterClass/getDescriptor   ; Descriptors$FileDescriptor
+     :name    "Greeter"                          ; optional — defaults to proto service name
+     :methods {"SayHello"
+               {:type    :unary
+                :handler (fn [^HelloRequest req observer]
+                           (grpc/complete! observer (build-reply req)))}}}]})
+```
+
+### StreamObserver helpers
+
+`s-exp.hirundo.grpc` provides thin wrappers around `StreamObserver` so you don't
+have to call Java methods directly:
+
+| Function | Description |
+|---|---|
+| `(grpc/send! observer msg)` | Send a message to the client |
+| `(grpc/complete! observer)` | Signal successful stream completion |
+| `(grpc/complete! observer msg)` | Send one message then complete (unary shorthand) |
+| `(grpc/error! observer throwable)` | Signal an error |
+| `(grpc/stream-observer {:on-next f :on-error f :on-completed f})` | Build a `StreamObserver` from callback fns (all optional) |
+
+### Service descriptor
+
+Each entry in `:grpc-services` can be one of:
+
+* **A map** `{:proto <Descriptors$FileDescriptor> :name "ServiceName" :methods {...}}`
+* **A `GrpcService` instance** — passed through unchanged
+* **A zero-arg fn** — called once at startup, must return a descriptor map (useful for
+  stateful or dynamically-configured services)
+
+### Method types and handler signatures
+
+| `:type`         | Handler signature                                     |
+|-----------------|-------------------------------------------------------|
+| `:unary`        | `(fn [request ^StreamObserver observer])`             |
+| `:server-stream`| `(fn [request ^StreamObserver observer])`             |
+| `:client-stream`| `(fn [^StreamObserver response-observer]) => StreamObserver` |
+| `:bidi`         | `(fn [^StreamObserver response-observer]) => StreamObserver` |
+
+For `:client-stream` and `:bidi`, the handler receives the response observer and
+must return a `StreamObserver` that handles incoming client messages.
+
+### Example — server streaming
+
+```clojure
+{:proto   svc-file-descriptor
+ :name    "DataService"
+ :methods {"ListItems"
+           {:type    :server-stream
+            :handler (fn [^ListRequest req observer]
+                       (doseq [item (fetch-items req)]
+                         (grpc/send! observer item))
+                       (grpc/complete! observer))}}}
+```
+
+### core.async handler wrappers
+
+For handlers that naturally produce or consume streams of messages,
+`s-exp.hirundo.grpc` provides wrappers that expose `core.async` channels
+instead of raw `StreamObserver` methods:
+
+| Wrapper | Method type | User fn signature |
+|---|---|---|
+| `unary-async-handler` | `:unary` | `(fn [request out-ch])` |
+| `server-stream-async-handler` | `:server-stream` | `(fn [request out-ch])` |
+| `client-stream-async-handler` | `:client-stream` | `(fn [in-ch out-ch])` |
+| `bidi-async-handler` | `:bidi` | `(fn [in-ch out-ch])` |
+
+For unary/server-stream handlers: put messages onto `out-ch` then close it to
+end the stream. For client-stream/bidi handlers: incoming client messages
+arrive on `in-ch` (closed on completion or error); put responses onto `out-ch`
+and close it when done.
+
+All four wrappers accept optional kwargs to override the channel factories
+(zero-arg fns called once per request):
+* `:out-ch-fn` — factory for the outgoing channel (all wrappers)
+* `:in-ch-fn` — factory for the incoming channel (`client-stream-async-handler`, `bidi-async-handler`)
+
+```clojure
+;; unary — put one response, close
+{"SayHello"
+ {:type :unary
+  :handler (grpc/unary-async-handler
+            (fn [req out-ch]
+              (async/>!! out-ch (build-reply req))
+              (async/close! out-ch)))}}
+
+;; bidi — echo loop via go-loop
+{"Chat"
+ {:type :bidi
+  :handler (grpc/bidi-async-handler
+            (fn [in-ch out-ch]
+              (async/go-loop []
+                (if-some [msg (async/<! in-ch)]
+                  (do (async/>! out-ch (echo msg))
+                      (recur))
+                  (async/close! out-ch)))))}}
+```
+
+### Example — bidi streaming
+
+```clojure
+{:proto   svc-file-descriptor
+ :name    "ChatService"
+ :methods {"Chat"
+           {:type :bidi
+            :handler (fn [response-observer]
+                       (grpc/stream-observer
+                        {:on-next #(grpc/send! response-observer (echo %))
+                         :on-error #(grpc/error! response-observer %)
+                         :on-completed #(grpc/complete! response-observer)}))}}}
+```
 
 ## SSE (Server-Sent Events)
 
