@@ -1,5 +1,6 @@
 (ns s-exp.hirundo
-  (:require [s-exp.hirundo.http.routing]
+  (:require [s-exp.hirundo.grpc.routing]
+            [s-exp.hirundo.http.routing]
             [s-exp.hirundo.options :as options]
             [s-exp.hirundo.websocket]
             [s-exp.hirundo.websocket.routing])
@@ -25,6 +26,13 @@
   * `:http-handler` - ring http handler function
 
   * `:websocket-endpoints` - websocket endpoints (map-of string-endpoint handler-fns-map), where handler if can be of `:message`, `:ping`, `:pong`, `:close`, `:error`, `:open`, `:http-upgrade`. `handler-fns-map` can also contain 2 extra keys, `:extensions`, `:subprotocols`, which are sets of exts/subprotos acceptable by the server.
+
+  * `:grpc-services` - vector of gRPC service descriptors. Each entry can be:
+    - a map `{:proto <Descriptors$FileDescriptor> :name \"ServiceName\" :methods {\"Method\" {:type :unary|:server-stream|:client-stream|:bidi :handler <fn>}}}`
+    - a `GrpcService` instance
+    - a zero-arg fn returning a descriptor map
+    Handler fns for `:unary`/`:server-stream` take `[request response-observer]`;
+    for `:client-stream`/`:bidi` take `[response-observer]` and return a `StreamObserver`.
   
   * `:host` - host of the default socket
   
