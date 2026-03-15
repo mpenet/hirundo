@@ -1,5 +1,6 @@
 (ns s-exp.hirundo.grpc.grpc-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [clojure.core.async :as async]
+            [clojure.test :refer [deftest is]]
             [s-exp.hirundo :as m]
             [s-exp.hirundo.grpc :as grpc])
   (:import (com.google.protobuf DescriptorProtos$FileDescriptorProto
@@ -143,9 +144,78 @@
        :methods {"BidiEcho" {:type :bidi
                              :handler (fn [response-observer]
                                         (grpc/stream-observer
-                                         {:on-next      #(grpc/send! response-observer %)
-                                          :on-error     #(grpc/error! response-observer %)
+                                         {:on-next #(grpc/send! response-observer %)
+                                          :on-error #(grpc/error! response-observer %)
                                           :on-completed #(grpc/complete! response-observer)}))}}}]}
+    (with-channel (.port server)
+      (let [received (atom [])
+            done (promise)
+            md (method-descriptor "PersonService" "BidiEcho"
+                                  MethodDescriptor$MethodType/BIDI_STREAMING)
+            response-obs (reify StreamObserver
+                           (onNext [_ msg]
+                             (swap! received conj (.getName ^Person msg)))
+                           (onError [_ _]
+                             (deliver done :error))
+                           (onCompleted [_]
+                             (deliver done :ok)))
+            request-obs (ClientCalls/asyncBidiStreamingCall
+                         (.newCall ch md (CallOptions/DEFAULT))
+                         response-obs)]
+        (doseq [n ["Alice" "Bob" "Carol"]]
+          (.onNext request-obs (person n 0)))
+        (.onCompleted request-obs)
+        (is (= :ok (deref done 5000 :timeout)))
+        (is (= ["Alice" "Bob" "Carol"] @received))))))
+
+(deftest test-unary-async-handler
+  (with-server
+    {:grpc-services
+     [{:proto svc-fd
+       :name "PersonService"
+       :methods {"Echo" {:type :unary
+                         :handler (grpc/unary-async-handler
+                                   (fn [^Person req out-ch]
+                                     (async/>!! out-ch req)
+                                     (async/close! out-ch)))}}}]}
+    (with-channel (.port server)
+      (let [result (unary-call ch "PersonService" "Echo" (person "Alice" 1))]
+        (is (= "Alice" (.getName result)))
+        (is (= 1 (.getId result)))))))
+
+(deftest test-server-stream-async-handler
+  (with-server
+    {:grpc-services
+     [{:proto svc-fd
+       :name "PersonService"
+       :methods {"StreamEcho" {:type :server-stream
+                               :handler (grpc/server-stream-async-handler
+                                         (fn [^Person req out-ch]
+                                           (dotimes [i 3]
+                                             (async/>!! out-ch (person (str (.getName req) "-" i) i)))
+                                           (async/close! out-ch)))}}}]}
+    (with-channel (.port server)
+      (let [md (method-descriptor "PersonService" "StreamEcho"
+                                  MethodDescriptor$MethodType/SERVER_STREAMING)
+            results (iterator-seq
+                     (ClientCalls/blockingServerStreamingCall ch md (CallOptions/DEFAULT)
+                                                              (person "Bob" 0)))
+            names (mapv #(.getName ^Person %) results)]
+        (is (= ["Bob-0" "Bob-1" "Bob-2"] names))))))
+
+(deftest test-bidi-async-handler
+  (with-server
+    {:grpc-services
+     [{:proto svc-fd
+       :name "PersonService"
+       :methods {"BidiEcho" {:type :bidi
+                             :handler (grpc/bidi-async-handler
+                                       (fn [in-ch out-ch]
+                                         (async/go-loop []
+                                           (if-some [msg (async/<! in-ch)]
+                                             (do (async/>! out-ch msg)
+                                                 (recur))
+                                             (async/close! out-ch)))))}}}]}
     (with-channel (.port server)
       (let [received (atom [])
             done (promise)

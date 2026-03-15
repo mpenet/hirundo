@@ -154,17 +154,61 @@ must return a `StreamObserver` that handles incoming client messages.
                        (grpc/complete! observer))}}}
 ```
 
+### core.async handler wrappers
+
+For handlers that naturally produce or consume streams of messages,
+`s-exp.hirundo.grpc` provides wrappers that expose `core.async` channels
+instead of raw `StreamObserver` methods:
+
+| Wrapper | Method type | User fn signature |
+|---|---|---|
+| `unary-async-handler` | `:unary` | `(fn [request out-ch])` |
+| `server-stream-async-handler` | `:server-stream` | `(fn [request out-ch])` |
+| `client-stream-async-handler` | `:client-stream` | `(fn [in-ch out-ch])` |
+| `bidi-async-handler` | `:bidi` | `(fn [in-ch out-ch])` |
+
+For unary/server-stream handlers: put messages onto `out-ch` then close it to
+end the stream. For client-stream/bidi handlers: incoming client messages
+arrive on `in-ch` (closed on completion or error); put responses onto `out-ch`
+and close it when done.
+
+All four wrappers accept optional kwargs to override the channel factories
+(zero-arg fns called once per request):
+* `:out-ch-fn` — factory for the outgoing channel (all wrappers)
+* `:in-ch-fn` — factory for the incoming channel (`client-stream-async-handler`, `bidi-async-handler`)
+
+```clojure
+;; unary — put one response, close
+{"SayHello"
+ {:type :unary
+  :handler (grpc/unary-async-handler
+            (fn [req out-ch]
+              (async/>!! out-ch (build-reply req))
+              (async/close! out-ch)))}}
+
+;; bidi — echo loop via go-loop
+{"Chat"
+ {:type :bidi
+  :handler (grpc/bidi-async-handler
+            (fn [in-ch out-ch]
+              (async/go-loop []
+                (if-some [msg (async/<! in-ch)]
+                  (do (async/>! out-ch (echo msg))
+                      (recur))
+                  (async/close! out-ch)))))}}
+```
+
 ### Example — bidi streaming
 
 ```clojure
 {:proto   svc-file-descriptor
  :name    "ChatService"
  :methods {"Chat"
-           {:type    :bidi
+           {:type :bidi
             :handler (fn [response-observer]
                        (grpc/stream-observer
-                        {:on-next      #(grpc/send! response-observer (echo %))
-                         :on-error     #(grpc/error! response-observer %)
+                        {:on-next #(grpc/send! response-observer (echo %))
+                         :on-error #(grpc/error! response-observer %)
                          :on-completed #(grpc/complete! response-observer)}))}}}
 ```
 
