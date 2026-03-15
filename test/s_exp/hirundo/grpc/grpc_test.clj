@@ -1,6 +1,7 @@
 (ns s-exp.hirundo.grpc.grpc-test
   (:require [clojure.test :refer [deftest is]]
-            [s-exp.hirundo :as m])
+            [s-exp.hirundo :as m]
+            [s-exp.hirundo.grpc :as grpc])
   (:import (com.google.protobuf DescriptorProtos$FileDescriptorProto
                                 DescriptorProtos$MethodDescriptorProto
                                 DescriptorProtos$ServiceDescriptorProto
@@ -91,8 +92,7 @@
        :name "PersonService"
        :methods {"Echo" {:type :unary
                          :handler (fn [^Person req observer]
-                                    (.onNext observer req)
-                                    (.onCompleted observer))}}}]}
+                                    (grpc/complete! observer req))}}}]}
     (with-channel (.port server)
       (let [result (unary-call ch "PersonService" "Echo" (person "Alice" 1))]
         (is (= "Alice" (.getName result)))
@@ -105,12 +105,12 @@
        :name "PersonService"
        :methods {"Echo" {:type :unary
                          :handler (fn [^Person req observer]
-                                    (.onNext observer
-                                             (-> (Person/newBuilder)
-                                                 (.setName (str "hello:" (.getName req)))
-                                                 (.setId (.getId req))
-                                                 .build))
-                                    (.onCompleted observer))}}}]}
+                                    (grpc/complete!
+                                     observer
+                                     (-> (Person/newBuilder)
+                                         (.setName (str "hello:" (.getName req)))
+                                         (.setId (.getId req))
+                                         .build)))}}}]}
     (with-channel (.port server)
       (let [result (unary-call ch "PersonService" "Echo" (person "Alice" 42))]
         (is (= "hello:Alice" (.getName result)))
@@ -124,8 +124,8 @@
        :methods {"StreamEcho" {:type :server-stream
                                :handler (fn [^Person req observer]
                                           (dotimes [i 3]
-                                            (.onNext observer (person (str (.getName req) "-" i) i)))
-                                          (.onCompleted observer))}}}]}
+                                            (grpc/send! observer (person (str (.getName req) "-" i) i)))
+                                          (grpc/complete! observer))}}}]}
     (with-channel (.port server)
       (let [md (method-descriptor "PersonService" "StreamEcho"
                                   MethodDescriptor$MethodType/SERVER_STREAMING)
@@ -141,14 +141,14 @@
      [{:proto svc-fd
        :name "PersonService"
        :methods {"BidiEcho" {:type :bidi
-                             :handler (fn [^StreamObserver response-observer]
+                             :handler (fn [response-observer]
                                         (reify StreamObserver
                                           (onNext [_ req]
-                                            (.onNext response-observer req))
-                                          (onError [_ _]
-                                            (.onCompleted response-observer))
+                                            (grpc/send! response-observer req))
+                                          (onError [_ t]
+                                            (grpc/error! response-observer t))
                                           (onCompleted [_]
-                                            (.onCompleted response-observer))))}}}]}
+                                            (grpc/complete! response-observer))))}}}]}
     (with-channel (.port server)
       (let [received (atom [])
             done (promise)
@@ -178,7 +178,6 @@
          :name "PersonService"
          :methods {"Echo" {:type :unary
                            :handler (fn [req observer]
-                                      (.onNext observer req)
-                                      (.onCompleted observer))}}})]}
+                                      (grpc/complete! observer req))}}})]}
     (with-channel (.port server)
       (is (= "Dave" (.getName (unary-call ch "PersonService" "Echo" (person "Dave" 0))))))))

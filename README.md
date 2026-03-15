@@ -76,6 +76,7 @@ middlewares out there.
 
 * `:tls` - A `io.helidon.nima.common.tls.Tls` instance
 
+* `:grpc-services` - vector of gRPC service descriptors (see [gRPC](#grpc) section)
 
 You can hook into the server builder via `s-exp.hirundo.options/set-server-option!`
 multimethod at runtime and add/modify whatever you want if you need anything
@@ -83,6 +84,91 @@ extra we don't provide (yet).
 
 http2 (h2 & h2c) is supported out of the box, iif a client connects with http2
 it will do the protocol switch automatically.
+
+## gRPC
+
+Hirundo supports hosting gRPC services on the same port as HTTP/WebSocket via
+Helidon's native gRPC module. You bring your own generated protobuf Java classes;
+hirundo passes raw protobuf objects to your handlers — serialization is your
+responsibility (e.g. wrap with [pronto](https://github.com/AppsFlyer/pronto) for
+idiomatic Clojure maps).
+
+```clojure
+(require '[s-exp.hirundo :as hirundo])
+(require '[s-exp.hirundo.grpc :as grpc])
+
+(hirundo/start!
+  {:grpc-services
+   [{:proto   MyProtoOuterClass/getDescriptor   ; Descriptors$FileDescriptor
+     :name    "Greeter"                          ; optional — defaults to proto service name
+     :methods {"SayHello"
+               {:type    :unary
+                :handler (fn [^HelloRequest req observer]
+                           (grpc/complete! observer (build-reply req)))}}}]})
+```
+
+### StreamObserver helpers
+
+`s-exp.hirundo.grpc` provides thin wrappers around `StreamObserver` so you don't
+have to call Java methods directly:
+
+| Function | Description |
+|---|---|
+| `(grpc/send! observer msg)` | Send a message to the client |
+| `(grpc/complete! observer)` | Signal successful stream completion |
+| `(grpc/error! observer throwable)` | Signal an error |
+| `(grpc/complete! observer msg)` | Send one message then complete (unary shorthand) |
+
+### Service descriptor
+
+Each entry in `:grpc-services` can be one of:
+
+* **A map** `{:proto <Descriptors$FileDescriptor> :name "ServiceName" :methods {...}}`
+* **A `GrpcService` instance** — passed through unchanged
+* **A zero-arg fn** — called once at startup, must return a descriptor map (useful for
+  stateful or dynamically-configured services)
+
+### Method types and handler signatures
+
+| `:type`         | Handler signature                                     |
+|-----------------|-------------------------------------------------------|
+| `:unary`        | `(fn [request ^StreamObserver observer])`             |
+| `:server-stream`| `(fn [request ^StreamObserver observer])`             |
+| `:client-stream`| `(fn [^StreamObserver response-observer]) => StreamObserver` |
+| `:bidi`         | `(fn [^StreamObserver response-observer]) => StreamObserver` |
+
+For `:client-stream` and `:bidi`, the handler receives the response observer and
+must return a `StreamObserver` that handles incoming client messages.
+
+### Example — server streaming
+
+```clojure
+{:proto   svc-file-descriptor
+ :name    "DataService"
+ :methods {"ListItems"
+           {:type    :server-stream
+            :handler (fn [^ListRequest req observer]
+                       (doseq [item (fetch-items req)]
+                         (grpc/send! observer item))
+                       (grpc/complete! observer))}}}
+```
+
+### Example — bidi streaming
+
+```clojure
+{:proto   svc-file-descriptor
+ :name    "ChatService"
+ :methods {"Chat"
+           {:type    :bidi
+            :handler (fn [response-observer]
+                       (reify StreamObserver
+                         (onNext [_ msg]
+                           (grpc/send! response-observer (echo msg)))
+                         (onError [_ t]
+                           (grpc/error! response-observer t))
+                         (onCompleted [_]
+                           (grpc/complete! response-observer))))}}}
+```
 
 ## SSE (Server-Sent Events)
 
