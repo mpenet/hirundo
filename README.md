@@ -116,8 +116,8 @@ have to call Java methods directly:
 |---|---|
 | `(grpc/send! observer msg)` | Send a message to the client |
 | `(grpc/complete! observer)` | Signal successful stream completion |
-| `(grpc/error! observer throwable)` | Signal an error |
 | `(grpc/complete! observer msg)` | Send one message then complete (unary shorthand) |
+| `(grpc/error! observer throwable)` | Signal an error |
 
 ### Service descriptor
 
