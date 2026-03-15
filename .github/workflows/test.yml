@@ -20,6 +20,9 @@ jobs:
         with:
           cli: 1.11.1.1182
 
+      - name: Compile test Java sources
+        run: clojure -X:compile-test-java
+
       - name: Run tests
         run: clojure -X:test s-exp.hirundo-test-runner/run
 
