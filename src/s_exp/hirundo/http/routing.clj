@@ -19,10 +19,12 @@
         (into-array Handler
                     [(reify Handler
                        (handle [_ server-request server-response]
-                         (let [response (handler (request/ring-request server-request server-response))]
+                         (let [response (handler (request/ring-request server-request server-response))
+                               head? (= (.method (.prologue server-request)) io.helidon.http.Method/HEAD)]
                            (cond->> response
                              (map? response)
-                             (response/set-response! server-response)))))]))))))
+                             ((if head? response/set-head-response! response/set-response!)
+                              server-response)))))]))))))
 
 (defmethod options/set-server-option! :http-handler
   [^WebServerConfig$Builder builder _ handler options]

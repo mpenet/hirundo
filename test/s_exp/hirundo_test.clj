@@ -85,7 +85,10 @@
     (is (-> (client/get *endpoint*) :body (= "yes"))))
 
   (with-server {:http-handler (fn [req] {:body (java.io.ByteArrayInputStream. (.getBytes "yes"))})}
-    (is (-> (client/get *endpoint*) :body (= "yes")))))
+    (is (-> (client/get *endpoint*) :body (= "yes"))))
+
+  (with-server {:http-handler (fn [req] {:body (java.io.ByteArrayInputStream. (.getBytes "yes"))})}
+    (is (-> (client/head *endpoint*) :body nil?))))
 
 (deftest resp-map-decoding
   (with-server {:http-handler (fn [req]

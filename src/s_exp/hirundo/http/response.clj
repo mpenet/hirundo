@@ -34,3 +34,9 @@
   (set-headers! server-response headers)
   (set-status! server-response status)
   (write-body! server-response response body))
+
+(defn set-head-response!
+  [^ServerResponse server-response {:as response :keys [headers status]}]
+  (set-headers! server-response headers)
+  (set-status! server-response status)
+  (.send server-response))
