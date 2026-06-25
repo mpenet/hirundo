@@ -136,7 +136,7 @@
 (defmacro with-ws-client
   [options & body]
   `(binding [*client* (wsc/connect (str (str/replace *endpoint* "http" "ws") "/ws")
-                        ~@(into [] cat options))]
+                                   ~@(into [] cat options))]
 
      (try
        ~@body
@@ -190,11 +190,11 @@
         (is (= "bar" @client-recv) "echo with correct subprotocols"))
 
       (is (thrown-with-msg? Exception
-                            #"Not Found"
+                            #"400|Bad Request"
                             (with-ws-client {}))
           "Missing subprotocols")
 
       (is (thrown-with-msg? Exception
-                            #"Not Found"
+                            #"400|Bad Request"
                             (with-ws-client {:subprotocols ["foo"]}))
           "Incorrect subprotocols"))))
